@@ -1,530 +1,348 @@
-html
-
 <!DOCTYPE html>
 
 <html lang="ko">
 
 <head>
 
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>✈️ 우리 가족 여행 일정</title>
+<title>✈️ 우리 가족 여행</title>
 
-    <style>
+<style>
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; color: #333; }
-
-        .hidden { display: none !important; }
-
-        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; font-family: inherit; }
-
-        .btn:hover { opacity: 0.85; transform: translateY(-1px); }
-
-        .btn-primary { background: #4f86f7; color: white; }
-
-        .btn-secondary { background: #e2e8f0; color: #555; }
-
-        .btn-danger { background: #fc8181; color: white; }
+  body { font-family: 'Apple SD Gothic Neo', '맑은 고딕', sans-serif; background: #f0f4ff; min-height: 100vh; }
 
  
 
-        /* ===== 로딩 ===== */
+  /* 로그인 */
 
-        #loading-screen {
+  #loginPage {
 
-            position: fixed; inset: 0; z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
 
-            background: linear-gradient(135deg, #667eea, #764ba2);
+    min-height: 100vh; background: linear-gradient(135deg, #667eea, #764ba2);
 
-            display: flex; align-items: center; justify-content: center;
+  }
 
-            flex-direction: column; gap: 16px; color: white;
+  .login-box {
 
-        }
+    background: white; border-radius: 24px; padding: 40px;
 
-        .loading-spinner {
+    width: 90%; max-width: 360px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
 
-            width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.3);
+  }
 
-            border-top-color: white; border-radius: 50%;
+  .login-box h1 { font-size: 2rem; margin-bottom: 8px; }
 
-            animation: spin 0.8s linear infinite;
+  .login-box p { color: #888; margin-bottom: 28px; }
 
-        }
+  .login-box input {
 
-        @keyframes spin { to { transform: rotate(360deg); } }
+    width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px;
 
- 
+    font-size: 1rem; margin-bottom: 12px; text-align: center; letter-spacing: 4px;
 
-        /* ===== 로그인 화면 ===== */
+  }
 
-        #login-screen {
+  .login-box input:focus { outline: none; border-color: #667eea; }
 
-            position: fixed; inset: 0; z-index: 9000;
+  .login-btn {
 
-            background: linear-gradient(135deg, #667eea, #764ba2);
+    width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea, #764ba2);
 
-            display: flex; align-items: center; justify-content: center; padding: 20px;
+    color: white; border: none; border-radius: 12px; font-size: 1rem;
 
-        }
+    font-weight: bold; cursor: pointer;
 
-        .login-box {
+  }
 
-            background: white; border-radius: 24px; padding: 40px 32px;
-
-            width: 100%; max-width: 380px; text-align: center;
-
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-
-            animation: fadeUp 0.4s ease;
-
-        }
-
-        @keyframes fadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
-
-        .login-emoji { font-size: 56px; margin-bottom: 12px; }
-
-        .login-title { font-size: 22px; font-weight: bold; color: #2d3748; margin-bottom: 6px; }
-
-        .login-subtitle { font-size: 13px; color: #718096; margin-bottom: 28px; }
-
-        .login-input {
-
-            width: 100%; padding: 12px 16px; border: 1.5px solid #e2e8f0;
-
-            border-radius: 10px; font-size: 15px; margin-bottom: 12px;
-
-            outline: none; font-family: inherit; transition: border-color 0.2s;
-
-        }
-
-        .login-input:focus { border-color: #667eea; }
-
-        .login-btn {
-
-            width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea, #764ba2);
-
-            color: white; border: none; border-radius: 10px; font-size: 16px;
-
-            font-weight: bold; cursor: pointer; font-family: inherit;
-
-            transition: opacity 0.2s; margin-top: 4px;
-
-        }
-
-        .login-btn:hover { opacity: 0.9; }
-
-        .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-        .login-error { color: #e53e3e; font-size: 13px; margin-top: 10px; min-height: 18px; }
+  .login-error { color: #e74c3c; margin-top: 10px; font-size: 0.9rem; display: none; }
 
  
 
-        /* ===== 헤더 ===== */
+  /* 메인 */
 
-        header {
+  #mainPage { display: none; }
 
-            background: linear-gradient(135deg, #667eea, #764ba2);
+  .header {
 
-            color: white; padding: 14px 20px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
 
-            display: flex; align-items: center; justify-content: space-between;
+    color: white; padding: 20px; text-align: center; position: relative;
 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  }
 
-            position: sticky; top: 0; z-index: 100;
+  .header h1 { font-size: 1.4rem; }
 
-        }
+  .logout-btn {
 
-        header h1 { font-size: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
 
-        .header-right { display: flex; align-items: center; gap: 10px; }
+    background: rgba(255,255,255,0.2); color: white; border: none;
 
-        .header-user { font-size: 12px; opacity: 0.85; }
+    padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;
 
-        .logout-btn {
-
-            background: rgba(255,255,255,0.2); border: none; color: white;
-
-            padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px;
-
-            transition: background 0.2s; font-family: inherit;
-
-        }
-
-        .logout-btn:hover { background: rgba(255,255,255,0.3); }
-
-        .breadcrumb { font-size: 12px; opacity: 0.85; display: flex; align-items: center; gap: 4px; }
-
-        .breadcrumb span { cursor: pointer; }
-
-        .breadcrumb span:hover { text-decoration: underline; }
+  }
 
  
 
-        /* ===== 저장 상태 토스트 ===== */
+  /* 탭 */
 
-        #toast {
+  .tabs {
 
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    display: flex; background: white; border-bottom: 2px solid #eee;
 
-            background: #2d3748; color: white; padding: 10px 20px;
+    position: sticky; top: 0; z-index: 100;
 
-            border-radius: 20px; font-size: 13px; z-index: 500;
+  }
 
-            transition: opacity 0.3s; opacity: 0; pointer-events: none;
+  .tab {
 
-        }
+    flex: 1; padding: 14px; text-align: center; cursor: pointer;
 
-        #toast.show { opacity: 1; }
+    font-size: 0.85rem; color: #888; border-bottom: 3px solid transparent;
 
- 
+    transition: all 0.2s;
 
-        /* ===== 메인 ===== */
+  }
 
-        #page-main { max-width: 1000px; margin: 0 auto; padding: 30px 16px; }
-
-        .page-title { text-align: center; margin-bottom: 30px; }
-
-        .page-title h2 { font-size: 24px; color: #4a5568; margin-bottom: 6px; }
-
-        .page-title p { color: #718096; font-size: 14px; }
-
-        .trip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; margin-bottom: 20px; }
-
-        .trip-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); cursor: pointer; transition: all 0.3s; }
-
-        .trip-card:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0,0,0,0.15); }
-
-        .trip-card-thumb { height: 140px; display: flex; align-items: center; justify-content: center; font-size: 56px; position: relative; }
-
-        .trip-card-badge { position: absolute; top: 10px; right: 10px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: bold; color: white; }
-
-        .badge-current{background:#48bb78} .badge-past{background:#a0aec0} .badge-upcoming{background:#ed8936}
-
-        .trip-card-body { padding: 14px; }
-
-        .trip-card-body h3 { font-size: 16px; margin-bottom: 5px; color: #2d3748; }
-
-        .trip-card-body p { font-size: 12px; color: #718096; margin-bottom: 3px; }
-
-        .trip-budget-mini { margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f0f0; }
-
-        .trip-budget-mini-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; }
-
-        .mini-bar-bg { height: 5px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
-
-        .mini-bar-fill { height: 100%; border-radius: 10px; }
-
-        .trip-card-actions { display: flex; gap: 8px; padding: 10px 14px; border-top: 1px solid #f0f0f0; }
-
-        .add-trip-btn { width: 100%; padding: 16px; background: white; border: 2px dashed #cbd5e0; border-radius: 16px; cursor: pointer; font-size: 15px; color: #a0aec0; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
-
-        .add-trip-btn:hover { border-color: #667eea; color: #667eea; background: #f7f8ff; }
+  .tab.active { color: #667eea; border-bottom-color: #667eea; font-weight: bold; }
 
  
 
-        /* ===== 여행 상세 ===== */
+  /* 컨텐츠 */
 
-        #page-trip { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
+  .content { padding: 20px; max-width: 600px; margin: 0 auto; }
 
-        .trip-header { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .section { display: none; }
 
-        .trip-header-emoji { font-size: 44px; }
-
-        .trip-header-info { flex: 1; min-width: 200px; }
-
-        .trip-header-info h2 { font-size: 20px; color: #2d3748; margin-bottom: 4px; }
-
-        .trip-header-info p { color: #718096; font-size: 13px; }
+  .section.active { display: block; }
 
  
 
-        /* ===== 예산 ===== */
+  /* 카드 */
 
-        .budget-summary { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .card {
 
-        .budget-summary-title { font-size: 15px; font-weight: bold; color: #2d3748; margin-bottom: 14px; }
+    background: white; border-radius: 16px; padding: 20px;
 
-        .budget-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px; }
+    margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
 
-        .budget-card { background: #f7fafc; border-radius: 12px; padding: 12px; text-align: center; }
-
-        .budget-card .b-label { font-size: 11px; color: #a0aec0; margin-bottom: 4px; }
-
-        .budget-card .b-value { font-size: 15px; font-weight: bold; }
-
-        .b-planned{color:#4f86f7} .b-actual{color:#e53e3e} .b-remain{color:#38a169} .b-over{color:#e53e3e}
-
-        .budget-bar-wrap { margin-bottom: 6px; }
-
-        .budget-bar-labels { display: flex; justify-content: space-between; font-size: 11px; color: #a0aec0; margin-bottom: 4px; }
-
-        .budget-bar-bg { height: 10px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
-
-        .budget-bar-fill { height: 100%; border-radius: 10px; transition: width 0.6s; }
-
-        .budget-bar-fill.over { background: linear-gradient(90deg,#fc8181,#e53e3e); }
-
-        .budget-bar-fill.ok { background: linear-gradient(90deg,#63b3ed,#4f86f7); }
-
-        .day-budget-toggle { font-size: 12px; color: #667eea; cursor: pointer; text-align: right; margin-top: 4px; }
-
-        .day-budget-list { margin-top: 10px; }
-
-        .day-budget-row { display: flex; align-items: center; gap: 8px; padding: 6px 4px; border-bottom: 1px solid #f0f0f0; cursor: pointer; border-radius: 6px; }
-
-        .day-budget-row:hover { background: #f7f8ff; }
-
-        .day-budget-row:last-child { border-bottom: none; }
-
-        .day-budget-row .day-label { min-width: 55px; color: #667eea; font-weight: bold; font-size: 12px; }
-
-        .day-budget-row .day-bar-bg { flex: 1; height: 6px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
-
-        .day-budget-row .day-bar-fill { height: 100%; border-radius: 6px; }
-
-        .day-budget-row .day-amounts { font-size: 11px; color: #718096; min-width: 110px; text-align: right; }
+  }
 
  
 
-        /* ===== 날짜 탭 ===== */
+  /* 버튼 */
 
-        .date-tabs-wrapper { background: white; border-radius: 16px; padding: 14px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .btn {
 
-        .date-tabs { display: flex; gap: 8px; min-width: max-content; }
+    padding: 10px 20px; border: none; border-radius: 10px;
 
-        .date-tab { padding: 8px 14px; border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; text-align: center; min-width: 70px; background: #f7fafc; position: relative; }
+    cursor: pointer; font-size: 0.9rem; font-weight: bold;
 
-        .date-tab:hover { border-color: #667eea; }
+  }
 
-        .date-tab.active { background: linear-gradient(135deg,#667eea,#764ba2); color: white; }
+  .btn-primary { background: #667eea; color: white; }
 
-        .date-tab .day-label { font-size: 10px; opacity: 0.75; margin-bottom: 2px; }
+  .btn-danger { background: #ff6b6b; color: white; }
 
-        .date-tab .day-num { font-size: 15px; font-weight: bold; }
+  .btn-success { background: #51cf66; color: white; }
 
-        .date-tab .day-of-week { font-size: 10px; opacity: 0.75; }
-
-        .date-tab .day-dot { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: #48bb78; }
-
-        .date-tab.active .day-dot { background: white; }
+  .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
 
  
 
-        /* ===== 사진 ===== */
+  /* 여행 카드 */
 
-        .photo-section { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .trip-card {
 
-        .photo-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    background: white; border-radius: 16px; padding: 20px;
 
-        .photo-section-header h3 { font-size: 15px; color: #2d3748; }
+    margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
 
-        .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+    cursor: pointer; transition: transform 0.2s;
 
-        .photo-item { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; cursor: pointer; background: #f0f4f8; }
+    border-left: 5px solid #667eea;
 
-        .photo-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+  }
 
-        .photo-item:hover img { transform: scale(1.05); }
+  .trip-card:hover { transform: translateY(-2px); }
 
-        .photo-item .photo-delete { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
+  .trip-card h3 { font-size: 1.1rem; margin-bottom: 6px; }
 
-        .photo-item:hover .photo-delete { opacity: 1; }
+  .trip-card p { color: #888; font-size: 0.85rem; }
 
-        .photo-item .photo-uploading { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; }
-
-        .photo-upload-btn { aspect-ratio: 1; border-radius: 10px; border: 2px dashed #cbd5e0; background: #f7fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; gap: 4px; min-height: 100px; }
-
-        .photo-upload-btn:hover { border-color: #667eea; background: #f0f4ff; }
-
-        .photo-upload-btn .upload-icon { font-size: 24px; }
-
-        .photo-upload-btn span { font-size: 11px; color: #a0aec0; }
-
-        .photo-upload-input { display: none; }
-
-        .photo-empty { text-align: center; padding: 20px; color: #a0aec0; font-size: 13px; grid-column: 1/-1; }
+  .trip-actions { display: flex; gap: 8px; margin-top: 12px; }
 
  
 
-        /* ===== 일정 ===== */
+  /* 일정 */
 
-        .schedule-section { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 16px; }
+  .schedule-item {
 
-        .schedule-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+    background: white; border-radius: 12px; padding: 16px;
 
-        .schedule-section-header h3 { font-size: 15px; color: #2d3748; }
+    margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 
-        .day-budget-mini { display: flex; gap: 8px; font-size: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+    border-left: 4px solid #667eea;
 
-        .day-budget-mini span { padding: 4px 10px; border-radius: 20px; }
+  }
 
-        .dbi-plan{background:#ebf4ff;color:#2b6cb0} .dbi-actual{background:#fff5f5;color:#c53030}
+  .schedule-item h4 { font-size: 0.95rem; margin-bottom: 4px; }
 
-        .dbi-diff-ok{background:#f0fff4;color:#276749} .dbi-diff-over{background:#fff5f5;color:#c53030}
-
-        .schedule-list { display: flex; flex-direction: column; }
-
-        .schedule-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px 8px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s; border-radius: 8px; }
-
-        .schedule-item:last-child { border-bottom: none; }
-
-        .schedule-item:hover { background: #f7f8ff; }
-
-        .schedule-time { font-size: 12px; color: #667eea; font-weight: bold; min-width: 46px; padding-top: 2px; }
-
-        .schedule-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
-
-        .schedule-content { flex: 1; min-width: 0; }
-
-        .schedule-content h4 { font-size: 14px; color: #2d3748; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        .schedule-content p { font-size: 12px; color: #718096; }
-
-        .schedule-budget-info { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 11px; flex-shrink: 0; }
-
-        .sbi-plan{color:#4f86f7} .sbi-actual{color:#e53e3e;font-weight:bold}
-
-        .schedule-category { font-size: 10px; padding: 2px 7px; border-radius: 12px; font-weight: bold; flex-shrink: 0; }
-
-        .schedule-item-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; }
-
-        .schedule-item:hover .schedule-item-actions { opacity: 1; }
-
-        .icon-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 4px; border-radius: 6px; }
-
-        .icon-btn:hover { background: #edf2f7; }
-
-        .empty-schedule { text-align: center; padding: 30px; color: #a0aec0; }
-
-        .empty-schedule .empty-icon { font-size: 36px; margin-bottom: 10px; }
+  .schedule-item p { color: #888; font-size: 0.82rem; }
 
  
 
-        /* ===== 모달 ===== */
+  /* 폼 */
 
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(3px); }
+  .form-group { margin-bottom: 14px; }
 
-        .modal { background: white; border-radius: 20px; width: 100%; max-width: 520px; max-height: 92vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalIn 0.25s ease; }
+  .form-group label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 6px; font-weight: bold; }
 
-        @keyframes modalIn { from{opacity:0;transform:scale(0.9) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
+  .form-group input, .form-group select, .form-group textarea {
 
-        .modal-header { padding: 20px 20px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; position: sticky; top: 0; background: white; border-radius: 20px 20px 0 0; z-index: 1; }
+    width: 100%; padding: 10px 12px; border: 2px solid #eee;
 
-        .modal-close { background: #f0f0f0; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+    border-radius: 10px; font-size: 0.9rem;
 
-        .modal-close:hover { background: #e2e2e2; }
+  }
 
-        .modal-body { padding: 16px 20px 20px; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
 
-        .detail-emoji { font-size: 44px; margin-bottom: 10px; display: block; }
+    outline: none; border-color: #667eea;
 
-        .detail-title { font-size: 20px; font-weight: bold; color: #2d3748; margin-bottom: 6px; }
+  }
 
-        .detail-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
-
-        .detail-tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
-
-        .detail-budget-box { background: #f7fafc; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
-
-        .detail-budget-box .db-title { font-size: 12px; color: #a0aec0; margin-bottom: 10px; font-weight: bold; text-transform: uppercase; }
-
-        .detail-budget-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-
-        .detail-budget-row .db-label { font-size: 13px; color: #718096; }
-
-        .detail-budget-row .db-val { font-size: 15px; font-weight: bold; }
-
-        .db-val-plan{color:#4f86f7} .db-val-actual{color:#e53e3e} .db-val-ok{color:#38a169} .db-val-over{color:#e53e3e}
-
-        .detail-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-
-        .detail-info-item { background: #f7fafc; border-radius: 10px; padding: 10px; }
-
-        .detail-info-item .label { font-size: 10px; color: #a0aec0; margin-bottom: 3px; text-transform: uppercase; }
-
-        .detail-info-item .value { font-size: 13px; font-weight: 600; color: #2d3748; }
-
-        .detail-desc { background: #f7fafc; border-radius: 10px; padding: 12px; font-size: 13px; color: #4a5568; line-height: 1.7; margin-bottom: 12px; }
-
-        .detail-memo { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; }
-
-        .detail-memo .label { font-size: 11px; color: #a0aec0; margin-bottom: 6px; }
-
-        .detail-memo textarea { width: 100%; border: none; outline: none; font-size: 13px; color: #4a5568; resize: none; background: transparent; font-family: inherit; line-height: 1.6; }
-
-        .map-link-btn { display: flex; align-items: center; justify-content: center; gap: 8px; flex: 1; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer; text-decoration: none; transition: all 0.2s; margin-bottom: 12px; border: none; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
  
 
-        /* ===== 폼 ===== */
+  /* 모달 */
 
-        .form-group { margin-bottom: 14px; }
+  .modal {
 
-        .form-group label { display: block; font-size: 12px; font-weight: 600; color: #4a5568; margin-bottom: 5px; }
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
 
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 9px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; font-family: inherit; }
+    background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;
 
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #667eea; }
+  }
 
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .modal.show { display: flex; }
 
-        .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+  .modal-box {
 
-        .actual-input { border-color: #fc8181 !important; }
+    background: white; border-radius: 20px; padding: 28px;
 
- 
+    width: 90%; max-width: 480px; max-height: 85vh; overflow-y: auto;
 
-        /* ===== 사진 뷰어 ===== */
+  }
 
-        #photo-viewer { position: fixed; inset: 0; background: rgba(0,0,0,0.93); z-index: 300; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; }
+  .modal-box h2 { margin-bottom: 20px; font-size: 1.2rem; }
 
-        #photo-viewer img { max-width: 95vw; max-height: 80vh; border-radius: 12px; object-fit: contain; }
-
-        .viewer-close { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
-        .viewer-caption { color: rgba(255,255,255,0.8); font-size: 13px; }
-
-        .viewer-nav { display: flex; gap: 16px; }
-
-        .viewer-nav button { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 20px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
 
  
 
-        /* 카테고리 */
+  /* 예산 */
 
-        .cat-식사{background:#fef3c7;color:#d97706} .cat-관광{background:#dbeafe;color:#2563eb}
+  .budget-summary {
 
-        .cat-숙소{background:#f3e8ff;color:#7c3aed} .cat-교통{background:#d1fae5;color:#059669}
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
 
-        .cat-쇼핑{background:#ffe4e6;color:#e11d48} .cat-액티비티{background:#ffedd5;color:#ea580c}
+    gap: 12px; margin-bottom: 20px;
 
-        .cat-기타{background:#f1f5f9;color:#64748b}
+  }
 
-        .dot-식사{background:#f59e0b} .dot-관광{background:#3b82f6} .dot-숙소{background:#8b5cf6}
+  .budget-box {
 
-        .dot-교통{background:#10b981} .dot-쇼핑{background:#f43f5e} .dot-액티비티{background:#f97316} .dot-기타{background:#94a3b8}
+    background: white; border-radius: 12px; padding: 16px;
+
+    text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+
+  }
+
+  .budget-box .label { font-size: 0.75rem; color: #888; margin-bottom: 6px; }
+
+  .budget-box .amount { font-size: 1.1rem; font-weight: bold; }
+
+  .budget-box.total .amount { color: #667eea; }
+
+  .budget-box.spent .amount { color: #ff6b6b; }
+
+  .budget-box.remain .amount { color: #51cf66; }
 
  
 
-        @media(max-width:600px){
+  /* 로딩 */
 
-            .form-row{grid-template-columns:1fr}
+  .loading {
 
-            .detail-info-grid{grid-template-columns:1fr}
+    text-align: center; padding: 40px; color: #888;
 
-            .schedule-item-actions{opacity:1}
+  }
 
-            .budget-card .b-value{font-size:12px}
+ 
 
-        }
+  /* 빈 상태 */
 
-    </style>
+  .empty {
+
+    text-align: center; padding: 40px; color: #aaa;
+
+  }
+
+  .empty .icon { font-size: 3rem; margin-bottom: 12px; }
+
+ 
+
+  /* 날짜 그룹 */
+
+  .date-group { margin-bottom: 20px; }
+
+  .date-label {
+
+    font-size: 0.85rem; font-weight: bold; color: #667eea;
+
+    margin-bottom: 10px; padding: 4px 10px;
+
+    background: #f0f4ff; border-radius: 8px; display: inline-block;
+
+  }
+
+ 
+
+  .add-btn {
+
+    position: fixed; bottom: 24px; right: 24px;
+
+    width: 56px; height: 56px; border-radius: 50%;
+
+    background: linear-gradient(135deg, #667eea, #764ba2);
+
+    color: white; font-size: 1.8rem; border: none;
+
+    box-shadow: 0 4px 16px rgba(102,126,234,0.5);
+
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+
+  }
+
+ 
+
+  .category-badge {
+
+    display: inline-block; padding: 2px 8px; border-radius: 6px;
+
+    font-size: 0.75rem; margin-right: 6px;
+
+  }
+
+</style>
 
 </head>
 
@@ -532,1512 +350,1003 @@ html
 
  
 
-<!-- 로딩 -->
+<!-- 로그인 페이지 -->
 
-<div id="loading-screen">
+<div id="loginPage">
 
-    <div class="loading-spinner"></div>
+  <div class="login-box">
 
-    <p style="font-size:15px">불러오는 중...</p>
+    <div style="font-size:3rem;margin-bottom:12px">✈️</div>
 
-</div>
+    <h1>우리 가족 여행</h1>
 
- 
+    <p>가족만의 여행 기록</p>
 
-<!-- 로그인 -->
+    <br>
 
-<div id="login-screen" class="hidden">
+    <input type="password" id="pwInput" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')login()">
 
-    <div class="login-box">
+    <button class="login-btn" onclick="login()">로그인</button>
 
-        <div class="login-emoji">✈️</div>
+    <div class="login-error" id="loginError">비밀번호가 틀렸어요 😢</div>
 
-        <div class="login-title">우리 가족 여행</div>
-
-        <div class="login-subtitle">가족만의 여행 기록을 시작해요</div>
-
-        <input type="email" class="login-input" id="login-email" placeholder="이메일" autocomplete="email">
-
-        <input type="password" class="login-input" id="login-password" placeholder="비밀번호" autocomplete="current-password">
-
-        <button class="login-btn" id="login-btn" onclick="doLogin()">로그인</button>
-
-        <div class="login-error" id="login-error"></div>
-
-    </div>
+  </div>
 
 </div>
 
  
 
-<!-- 앱 -->
+<!-- 메인 페이지 -->
 
-<div id="app" class="hidden">
+<div id="mainPage">
 
-    <header>
+  <div class="header">
 
-        <h1 onclick="goHome()">✈️ 우리 가족 여행</h1>
+    <h1>✈️ 우리 가족 여행</h1>
 
-        <div class="header-right">
+    <button class="logout-btn" onclick="logout()">로그아웃</button>
 
-            <div class="breadcrumb" id="breadcrumb"></div>
-
-            <span class="header-user" id="header-user"></span>
-
-            <button class="logout-btn" onclick="doLogout()">로그아웃</button>
-
-        </div>
-
-    </header>
+  </div>
 
  
 
-    <div id="page-main">
+  <div class="tabs">
 
-        <div class="page-title">
+    <div class="tab active" onclick="switchTab('trips')">🗺️ 여행</div>
 
-            <h2>🗺️ 여행 목록</h2>
+    <div class="tab" onclick="switchTab('schedule')">📅 일정</div>
 
-            <p>여행을 선택하거나 새 여행을 추가하세요</p>
+    <div class="tab" onclick="switchTab('budget')">💰 예산</div>
 
-        </div>
+  </div>
 
-        <div class="trip-grid" id="trip-grid"></div>
+ 
 
-        <button class="add-trip-btn" onclick="openAddTripModal()">➕ 새 여행 추가하기</button>
+  <div class="content">
+
+    <!-- 여행 목록 -->
+
+    <div class="section active" id="tripsSection">
+
+      <div id="tripsList"><div class="loading">⏳ 불러오는 중...</div></div>
 
     </div>
 
  
 
-    <div id="page-trip" class="hidden">
+    <!-- 일정 -->
 
-        <div class="trip-header" id="trip-header"></div>
+    <div class="section" id="scheduleSection">
 
-        <div class="budget-summary">
+      <div id="tripSelector" style="margin-bottom:16px"></div>
 
-            <div class="budget-summary-title">💰 예산 현황</div>
-
-            <div class="budget-cards">
-
-                <div class="budget-card"><div class="b-label">총 예산</div><div class="b-value b-planned" id="total-budget">0원</div></div>
-
-               <div class="budget-card"><div class="b-label">실제 지출</div><div class="b-value b-actual" id="total-actual">0원</div></div>
-
-                <div class="budget-card"><div class="b-label">잔여/초과</div><div class="b-value" id="total-remain">0원</div></div>
-
-            </div>
-
-            <div class="budget-bar-wrap">
-
-                <div class="budget-bar-labels"><span>지출률</span><span id="budget-percent-label">0%</span></div>
-
-                <div class="budget-bar-bg"><div class="budget-bar-fill ok" id="budget-bar" style="width:0%"></div></div>
-
-            </div>
-
-            <div class="day-budget-toggle" onclick="toggleDayBudget()">📊 날짜별 상세 보기 ▼</div>
-
-            <div class="day-budget-list hidden" id="day-budget-list"></div>
-
-        </div>
-
-        <div class="date-tabs-wrapper"><div class="date-tabs" id="date-tabs"></div></div>
-
-        <div class="photo-section">
-
-            <div class="photo-section-header">
-
-                <h3>📸 오늘의 사진</h3>
-
-                <span id="photo-count" style="font-size:12px;color:#a0aec0"></span>
-
-            </div>
-
-            <div class="photo-grid" id="photo-grid"></div>
-
-        </div>
-
-        <div class="schedule-section">
-
-            <div class="schedule-section-header">
-
-                <h3 id="selected-date-title">일정</h3>
-
-                <button class="btn btn-primary" onclick="openAddScheduleModal()" style="font-size:13px;padding:8px 14px;">+ 일정 추가</button>
-
-            </div>
-
-            <div class="day-budget-mini" id="day-budget-mini"></div>
-
-            <div class="schedule-list" id="schedule-list"></div>
-
-        </div>
+      <div id="scheduleList"><div class="empty"><div class="icon">📅</div>여행을 선택해주세요</div></div>
 
     </div>
+
+ 
+
+    <!-- 예산 -->
+
+    <div class="section" id="budgetSection">
+
+      <div id="budgetTripSelector" style="margin-bottom:16px"></div>
+
+      <div id="budgetContent"></div>
+
+    </div>
+
+  </div>
 
 </div>
 
  
 
-<!-- 토스트 -->
+<!-- 여행 추가/수정 모달 -->
 
-<div id="toast"></div>
+<div class="modal" id="tripModal">
 
- 
+  <div class="modal-box">
 
-<!-- 사진 뷰어 -->
+    <h2 id="tripModalTitle">✈️ 여행 추가</h2>
 
-<div id="photo-viewer" class="hidden">
+    <div class="form-group">
 
-    <button class="viewer-close" onclick="closeViewer()">✕</button>
+      <label>여행 이름</label>
 
-    <img id="viewer-img" src="" alt="">
-
-    <div class="viewer-caption" id="viewer-caption"></div>
-
-    <div class="viewer-nav">
-
-        <button onclick="viewerNav(-1)">‹</button>
-
-        <button onclick="viewerNav(1)">›</button>
+      <input type="text" id="tripTitle" placeholder="예) 제주도 가족여행">
 
     </div>
+
+    <div class="form-group">
+
+      <label>목적지</label>
+
+      <input type="text" id="tripDest" placeholder="예) 제주도">
+
+    </div>
+
+    <div class="form-row">
+
+      <div class="form-group">
+
+        <label>출발일</label>
+
+        <input type="date" id="tripStart">
+
+      </div>
+
+      <div class="form-group">
+
+        <label>도착일</label>
+
+        <input type="date" id="tripEnd">
+
+      </div>
+
+    </div>
+
+    <div class="form-group">
+
+      <label>이모지</label>
+
+      <input type="text" id="tripEmoji" placeholder="✈️" maxlength="2">
+
+    </div>
+
+    <div class="modal-actions">
+
+      <button class="btn" onclick="closeTripModal()">취소</button>
+
+      <button class="btn btn-primary" onclick="saveTrip()">저장</button>
+
+    </div>
+
+  </div>
 
 </div>
 
  
 
-<!-- 상세 모달 -->
+<!-- 일정 추가/수정 모달 -->
 
-<div class="modal-overlay hidden" id="detail-modal">
+<div class="modal" id="scheduleModal">
 
-    <div class="modal">
+  <div class="modal-box">
 
-        <div class="modal-header">
+    <h2 id="scheduleModalTitle">📅 일정 추가</h2>
 
-            <div></div>
+    <div class="form-group">
 
-            <button class="modal-close" onclick="closeModal('detail-modal')">✕</button>
+      <label>날짜</label>
 
-        </div>
-
-        <div class="modal-body" id="detail-modal-body"></div>
+      <input type="date" id="schedDate">
 
     </div>
+
+    <div class="form-row">
+
+      <div class="form-group">
+
+        <label>시작 시간</label>
+
+        <input type="time" id="schedTime">
+
+      </div>
+
+      <div class="form-group">
+
+        <label>종료 시간</label>
+
+        <input type="time" id="schedEndTime">
+
+      </div>
+
+    </div>
+
+    <div class="form-group">
+
+      <label>일정 이름</label>
+
+      <input type="text" id="schedTitle" placeholder="예) 성산일출봉 방문">
+
+    </div>
+
+    <div class="form-group">
+
+      <label>카테고리</label>
+
+      <select id="schedCategory">
+
+        <option value="🚗 이동">🚗 이동</option>
+
+        <option value="🏨 숙소">🏨 숙소</option>
+
+        <option value="🍽️ 식사">🍽️ 식사</option>
+
+        <option value="🎡 관광">🎡 관광</option>
+
+        <option value="🛍️ 쇼핑">🛍️ 쇼핑</option>
+
+        <option value="☕ 카페">☕ 카페</option>
+
+        <option value="📝 기타">📝 기타</option>
+
+      </select>
+
+    </div>
+
+    <div class="form-group">
+
+      <label>장소</label>
+
+      <input type="text" id="schedLocation" placeholder="예) 성산일출봉">
+
+    </div>
+
+    <div class="form-row">
+
+      <div class="form-group">
+
+        <label>예산</label>
+
+        <input type="number" id="schedBudget" placeholder="0">
+
+      </div>
+
+      <div class="form-group">
+
+        <label>실제 지출</label>
+
+        <input type="number" id="schedActual" placeholder="0">
+
+      </div>
+
+    </div>
+
+    <div class="form-group">
+
+      <label>메모</label>
+
+      <textarea id="schedMemo" rows="2" placeholder="메모를 입력하세요"></textarea>
+
+    </div>
+
+    <div class="modal-actions">
+
+      <button class="btn" onclick="closeScheduleModal()">취소</button>
+
+      <button class="btn btn-primary" onclick="saveSchedule()">저장</button>
+
+    </div>
+
+  </div>
 
 </div>
 
  
 
-<!-- 일정 모달 -->
+<script>
 
-<div class="modal-overlay hidden" id="schedule-modal">
-
-    <div class="modal">
-
-        <div class="modal-header">
-
-            <h3 id="schedule-modal-title" style="font-size:17px;color:#2d3748;">일정 추가</h3>
-
-            <button class="modal-close" onclick="closeModal('schedule-modal')">✕</button>
-
-        </div>
-
-        <div class="modal-body">
-
-            <div class="form-group"><label>📌 제목</label><input type="text" id="sch-title" placeholder="경복궁 관람"></div>
-
-            <div class="form-row">
-
-                <div class="form-group"><label>🕐 시작</label><input type="time" id="sch-start"></div>
-
-                <div class="form-group"><label>🕑 종료</label><input type="time" id="sch-end"></div>
-
-            </div>
-
-            <div class="form-row">
-
-                <div class="form-group"><label>🏷️ 카테고리</label>
-
-                    <select id="sch-category"><option>관광</option><option>식사</option><option>숙소</option><option>교통</option><option>쇼핑</option><option>액티비티</option><option>기타</option></select>
-
-                </div>
-
-                <div class="form-group"><label>😊 이모지</label><input type="text" id="sch-emoji" placeholder="🏯" maxlength="2"></div>
-
-            </div>
-
-            <div class="form-row">
-
-                <div class="form-group"><label>💰 예산(원)</label><input type="number" id="sch-budget" placeholder="15000"></div>
-
-                <div class="form-group"><label>💸 실제지출(원)</label><input type="number" id="sch-actual" placeholder="13500" class="actual-input"></div>
-
-            </div>
-
-            <div class="form-group"><label>📍 장소</label><input type="text" id="sch-location" placeholder="서울 종로구 경복궁"></div>
-
-            <div class="form-group"><label>📝 설명</label><textarea id="sch-desc" rows="2" placeholder="일정 설명"></textarea></div>
-
-            <div class="form-group"><label>🗒️ 메모</label><textarea id="sch-memo" rows="2" placeholder="준비물, 예약번호 등"></textarea></div>
-
-            <div class="form-actions">
-
-                <button class="btn btn-secondary" onclick="closeModal('schedule-modal')">취소</button>
-
-                <button class="btn btn-primary" onclick="saveSchedule()">저장</button>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
+const API_URL = 'https://script.google.com/macros/s/AKfycbw_Wu4xLBF7W5VCTUkzc7a9LGRIn5edyXHyOnboMc9dknBR2yYU5F-oX-aGyBN-5iQ/exec';
 
  
-
-<!-- 여행 모달 -->
-
-<div class="modal-overlay hidden" id="trip-modal">
-
-    <div class="modal">
-
-        <div class="modal-header">
-
-            <h3 id="trip-modal-title" style="font-size:17px;color:#2d3748;">새 여행 추가</h3>
-
-            <button class="modal-close" onclick="closeModal('trip-modal')">✕</button>
-
-        </div>
-
-        <div class="modal-body">
-
-            <div class="form-group"><label>✈️ 여행 제목</label><input type="text" id="trip-title" placeholder="2024 도쿄 여행"></div>
-
-            <div class="form-row">
-
-                <div class="form-group"><label>📅 시작일</label><input type="date" id="trip-start"></div>
-
-                <div class="form-group"><label>📅 종료일</label><input type="date" id="trip-end"></div>
-
-            </div>
-
-            <div class="form-group"><label>🌍 목적지</label><input type="text" id="trip-dest" placeholder="일본 도쿄"></div>
-
-            <div class="form-row">
-
-                <div class="form-group"><label>😊 이모지</label><input type="text" id="trip-emoji" placeholder="🗼" maxlength="2"></div>
-
-                <div class="form-group"><label>🎨 색상</label><input type="color" id="trip-color" value="#667eea" style="height:42px;cursor:pointer;"></div>
-
-            </div>
-
-            <div class="form-actions">
-
-                <button class="btn btn-secondary" onclick="closeModal('trip-modal')">취소</button>
-
-                <button class="btn btn-primary" onclick="saveTrip()">저장</button>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
- 
-
-<!-- Firebase SDK -->
-
-<script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
-
-    from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-
-import { getFirestore, doc, setDoc, getDoc }
-
-    from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject }
-
-    from "https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js";
-
- 
-
-// =============================================
-
-// 🔴 여기를 Firebase 설정값으로 교체하세요!
-
-// =============================================
-
-const firebaseConfig = {
-
-    apiKey:            "AIzaSyD_dlASwvK3TNQqFg7hz1xuPEvOYjmzRJY",
-
-    authDomain:        "travel-1a5e5.firebaseapp.com",
-
-    projectId:         "travel-1a5e5",
-
-    storageBucket:     "travel-1a5e5.firebasestorage.app",
-
-    messagingSenderId: "342500456137",
-
-    appId:             "1:342500456137:web:83638b54134139eacc3f18"
-
-};
-
- 
-
-const app     = initializeApp(firebaseConfig);
-
-const auth    = getAuth(app);
-
-const db      = getFirestore(app);
-
-const storage = getStorage(app);
-
- 
-
-// =============================================
-
-//  전역 데이터
-
-// =============================================
 
 let trips = [];
 
-let currentTripId   = null;
+let schedules = [];
 
-let currentDayIndex = 0;
+let selectedTripId = null;
+
+let editingTripId = null;
 
 let editingScheduleId = null;
 
-let editingTripId     = null;
-
-let nextId = 1000;
-
-let viewerPhotos = [], viewerIndex = 0;
+let currentTab = 'trips';
 
  
 
-// =============================================
+// ── 로그인 ──
 
-//  유틸
+async function login() {
 
-// =============================================
+  const pw = document.getElementById('pwInput').value;
 
-const $ = id => document.getElementById(id);
+  if (!pw) return;
 
-function getDates(s, e) {
+  try {
 
-    const dates=[], cur=new Date(s), end=new Date(e);
+    const res = await fetch(`${API_URL}?action=checkPassword&password=${encodeURIComponent(pw)}`);
 
-    while(cur<=end){ dates.push(cur.toISOString().split('T')[0]); cur.setDate(cur.getDate()+1); }
+    const data = await res.json();
 
-    return dates;
+    if (data.success) {
 
-}
+      sessionStorage.setItem('loggedIn', 'true');
 
-function fmtDate(d){ const dt=new Date(d); return `${dt.getMonth()+1}/${dt.getDate()}`; }
+      document.getElementById('loginPage').style.display = 'none';
 
-function dow(d){ return ['일','월','화','수','목','금','토'][new Date(d).getDay()]; }
+      document.getElementById('mainPage').style.display = 'block';
 
-function fmtFull(d){ const dt=new Date(d); return `${dt.getFullYear()}년 ${dt.getMonth()+1}월 ${dt.getDate()}일 (${dow(d)})`; }
-
-function comma(n){ return Number(n||0).toLocaleString(); }
-
-function closeModal(id){ $(id).classList.add('hidden'); }
-
-function openModal(id){ $(id).classList.remove('hidden'); }
-
-function getTripStatus(t){
-
-    const today=new Date().toISOString().split('T')[0];
-
-    if(t.endDate<today) return 'past';
-
-    if(t.startDate>today) return 'upcoming';
-
-    return 'current';
-
-}
-
-function getBadge(s){
-
-    if(s==='current') return {cls:'badge-current',text:'진행중'};
-
-    if(s==='upcoming') return {cls:'badge-upcoming',text:'예정'};
-
-    return {cls:'badge-past',text:'완료'};
-
-}
-
- 
-
-// 토스트
-
-function showToast(msg, duration=2000){
-
-    const t=$('toast'); t.textContent=msg; t.classList.add('show');
-
-    setTimeout(()=>t.classList.remove('show'), duration);
-
-}
-
- 
-
-// 모달 외부 클릭
-
-document.querySelectorAll('.modal-overlay').forEach(o=>{
-
-    o.addEventListener('click', e=>{ if(e.target===o) o.classList.add('hidden'); });
-
-});
-
- 
-
-// =============================================
-
-//  🔐 인증
-
-// =============================================
-
-onAuthStateChanged(auth, async user => {
-
-    $('loading-screen').classList.add('hidden');
-
-    if(user){
-
-        $('login-screen').classList.add('hidden');
-
-        $('app').classList.remove('hidden');
-
-        $('header-user').textContent = user.email;
-
-        await loadData();
+      loadData();
 
     } else {
 
-        $('login-screen').classList.remove('hidden');
-
-        $('app').classList.add('hidden');
+      document.getElementById('loginError').style.display = 'block';
 
     }
 
-});
+  } catch(e) {
+
+    alert('연결 오류! 잠시 후 다시 시도해주세요.');
+
+  }
+
+}
 
  
 
-async function doLogin(){
+function logout() {
 
-    const email = $('login-email').value.trim();
+  sessionStorage.removeItem('loggedIn');
 
-    const pw    = $('login-password').value;
+  document.getElementById('loginPage').style.display = 'flex';
 
-    const btn   = $('login-btn');
+  document.getElementById('mainPage').style.display = 'none';
 
-    const err   = $('login-error');
+  document.getElementById('pwInput').value = '';
 
-    if(!email||!pw){ err.textContent='이메일과 비밀번호를 입력해주세요'; return; }
+}
 
-    btn.disabled=true; btn.textContent='로그인 중...'; err.textContent='';
+ 
 
-    try{
+// 자동 로그인 체크
 
-        await signInWithEmailAndPassword(auth, email, pw);
+if (sessionStorage.getItem('loggedIn')) {
 
-    } catch(e){
+  document.getElementById('loginPage').style.display = 'none';
 
-        const msgs = {
+  document.getElementById('mainPage').style.display = 'block';
 
-            'auth/user-not-found':'등록되지 않은 이메일입니다',
+  loadData();
 
-            'auth/wrong-password':'비밀번호가 올바르지 않습니다',
+}
 
-            'auth/invalid-email':'이메일 형식이 올바르지 않습니다',
+ 
 
-            'auth/too-many-requests':'잠시 후 다시 시도해주세요',
+// ── 데이터 로드 ──
 
-            'auth/invalid-credential':'이메일 또는 비밀번호가 올바르지 않습니다'
+async function loadData() {
 
-        };
+  try {
 
-        err.textContent = msgs[e.code] || '로그인 실패: ' + e.message;
+    const res = await fetch(`${API_URL}?action=getData`);
 
-        btn.disabled=false; btn.textContent='로그인';
+    const data = await res.json();
+
+    if (data.success) {
+
+      trips = data.trips || [];
+
+      schedules = data.schedules || [];
+
+      renderTrips();
+
+      renderTripSelector();
 
     }
 
-}
+  } catch(e) {
 
- 
+    document.getElementById('tripsList').innerHTML = '<div class="empty"><div class="icon">⚠️</div>데이터 불러오기 실패</div>';
 
-async function doLogout(){
-
-    if(!confirm('로그아웃 하시겠습니까?')) return;
-
-    await signOut(auth);
+  }
 
 }
 
  
 
-// 엔터키 로그인
+// ── 탭 전환 ──
 
-$('login-password').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+function switchTab(tab) {
+
+  currentTab = tab;
+
+  document.querySelectorAll('.tab').forEach((t,i) => {
+
+    t.classList.toggle('active', ['trips','schedule','budget'][i] === tab);
+
+  });
+
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
+  document.getElementById(tab === 'trips' ? 'tripsSection' : tab === 'schedule' ? 'scheduleSection' : 'budgetSection').classList.add('active');
 
  
 
-// =============================================
+  if (tab === 'schedule') renderSchedules();
 
-//  💾 Firestore - 데이터 저장/불러오기
-
-// =============================================
-
-async function loadData(){
-
-    try{
-
-        showToast('📡 데이터 불러오는 중...');
-
-        const snap = await getDoc(doc(db,'travel','data'));
-
-        if(snap.exists()){
-
-            trips = snap.data().trips || [];
-
-        }
-
-        renderMainPage();
-
-        showToast('✅ 불러오기 완료');
-
-    } catch(e){
-
-        console.error(e);
-
-        showToast('⚠️ 데이터 불러오기 실패');
-
-        renderMainPage();
-
-    }
+  if (tab === 'budget') renderBudget();
 
 }
 
  
 
-async function saveData(){
+// ── 여행 ──
 
-    try{
+function renderTrips() {
 
-        // 사진 src(base64)는 Firestore에 저장 안 함 (Storage URL만 저장)
+  const el = document.getElementById('tripsList');
 
-        const toSave = trips.map(trip=>({
+  if (!trips.length) {
 
-            ...trip,
+    el.innerHTML = '<div class="empty"><div class="icon">🗺️</div>여행을 추가해보세요!</div>';
 
-            photos: Object.fromEntries(
+    return;
 
-                Object.entries(trip.photos||{}).map(([date, photos])=>[
+  }
 
-                    date,
+  el.innerHTML = trips.map(t => `
 
-                    photos.map(p=>({ id:p.id, url:p.url||'', path:p.path||'', caption:p.caption, time:p.time }))
+    <div class="trip-card" style="border-left-color:${t.color||'#667eea'}">
 
-                ])
+      <div style="font-size:1.8rem">${t.emoji||'✈️'}</div>
 
-            )
+      <h3>${t.title}</h3>
 
-        }));
+      <p>📍 ${t.destination} &nbsp;|&nbsp; 📅 ${t.startDate} ~ ${t.endDate}</p>
 
-        await setDoc(doc(db,'travel','data'), { trips: toSave });
+      <div class="trip-actions">
 
-        showToast('✅ 저장 완료');
+        <button class="btn btn-primary btn-sm" onclick="selectTrip('${t.id}')">일정 보기</button>
 
-    } catch(e){
+        <button class="btn btn-sm" style="background:#f0f4ff;color:#667eea" onclick="openEditTrip('${t.id}')">수정</button>
 
-        console.error(e);
+        <button class="btn btn-danger btn-sm" onclick="deleteTrip('${t.id}')">삭제</button>
 
-        showToast('❌ 저장 실패: ' + e.message);
+      </div>
 
-    }
+    </div>
 
-}
-
- 
-
-// =============================================
-
-//  📸 Storage - 사진 업로드/삭제
-
-// =============================================
-
-async function uploadPhotoToStorage(tripId, date, file){
-
-    const path = `photos/${tripId}/${date}/${Date.now()}_${file.name}`;
-
-    const storageRef = ref(storage, path);
-
-    const snap = await uploadBytes(storageRef, file);
-
-    const url  = await getDownloadURL(snap.ref);
-
-    return { url, path };
+  `).join('');
 
 }
 
  
 
-async function handlePhotoUpload(event){
+function renderTripSelector() {
 
-    const files = Array.from(event.target.files);
+  const sel = `
 
-    if(!files.length) return;
+    <select class="form-group" onchange="selectTrip(this.value)" style="width:100%;padding:10px;border:2px solid #eee;border-radius:10px;font-size:0.9rem">
 
-    const trip  = trips.find(t=>t.id===currentTripId);
+      <option value="">여행 선택...</option>
 
-    const dates = getDates(trip.startDate, trip.endDate);
+      ${trips.map(t => `<option value="${t.id}" ${t.id==selectedTripId?'selected':''}>${t.emoji||'✈️'} ${t.title}</option>`).join('')}
 
-    const date  = dates[currentDayIndex];
+    </select>`;
 
-    if(!trip.photos) trip.photos={};
+  document.getElementById('tripSelector').innerHTML = sel;
 
-    if(!trip.photos[date]) trip.photos[date]=[];
-
- 
-
-    const MAX=10;
-
-    if(trip.photos[date].length>=MAX){ alert(`하루 최대 ${MAX}장까지 업로드 가능합니다`); return; }
-
-    const toProcess = files.slice(0, MAX-trip.photos[date].length);
-
- 
-
-    for(const file of toProcess){
-
-        if(!file.type.startsWith('image/')){ showToast('이미지 파일만 업로드 가능합니다'); continue; }
-
-        if(file.size > 10*1024*1024){ showToast(`${file.name}: 10MB 초과`); continue; }
-
- 
-
-        // 임시 미리보기 추가
-
-        const tempId = 'temp_' + Date.now();
-
-        const tempUrl = URL.createObjectURL(file);
-
-        trip.photos[date].push({ id:tempId, url:tempUrl, path:'', caption:file.name.replace(/\.[^/.]+$/,''), time:Date.now(), uploading:true });
-
-        renderPhotos(trip);
-
- 
-
-        try{
-
-            showToast('📤 업로드 중...');
-
-            const { url, path } = await uploadPhotoToStorage(currentTripId, date, file);
-
-            // 임시 항목을 실제 URL로 교체
-
-            const idx = trip.photos[date].findIndex(p=>p.id===tempId);
-
-            if(idx!==-1){
-
-                trip.photos[date][idx] = { id:'p'+nextId++, url, path, caption:file.name.replace(/\.[^/.]+$/,''), time:Date.now(), uploading:false };
-
-            }
-
-            renderPhotos(trip);
-
-            renderDateTabs(trip);
-
-            await saveData();
-
-        } catch(e){
-
-            console.error(e);
-
-            showToast('❌ 업로드 실패: ' + e.message);
-
-            trip.photos[date] = trip.photos[date].filter(p=>p.id!==tempId);
-
-            renderPhotos(trip);
-
-        }
-
-    }
-
-    event.target.value='';
+  document.getElementById('budgetTripSelector').innerHTML = sel.replace('onchange="selectTrip(this.value)"', 'onchange="selectBudgetTrip(this.value)"');
 
 }
 
  
 
-async function deletePhoto(photoId, photoPath, e){
+function selectTrip(id) {
 
-    e.stopPropagation();
+  selectedTripId = id;
 
-    if(!confirm('사진을 삭제하시겠습니까?')) return;
+  switchTab('schedule');
 
-    const trip  = trips.find(t=>t.id===currentTripId);
+  renderTripSelector();
 
-    const dates = getDates(trip.startDate, trip.endDate);
-
-    const date  = dates[currentDayIndex];
-
-    trip.photos[date] = trip.photos[date].filter(p=>p.id!==photoId);
-
-    renderPhotos(trip);
-
-    renderDateTabs(trip);
-
-    try{
-
-        if(photoPath){ await deleteObject(ref(storage, photoPath)); }
-
-        await saveData();
-
-        showToast('🗑️ 사진 삭제 완료');
-
-    } catch(e){ console.error(e); }
+  renderSchedules();
 
 }
 
  
 
-// =============================================
+function selectBudgetTrip(id) {
 
-//  예산 계산
+  selectedTripId = id;
 
-// =============================================
-
-function calcTrip(trip){
-
-    let b=0,a=0;
-
-    Object.values(trip.schedules||{}).forEach(arr=>arr.forEach(s=>{ b+=Number(s.budget||0); a+=Number(s.actual||0); }));
-
-    return {b,a,r:b-a};
-
-}
-
-function calcDay(trip,date){
-
-    let b=0,a=0;
-
-    (trip.schedules[date]||[]).forEach(s=>{ b+=Number(s.budget||0); a+=Number(s.actual||0); });
-
-    return {b,a,r:b-a};
+  renderBudget();
 
 }
 
  
 
-// =============================================
+function openAddTrip() {
 
-//  메인 페이지
+  editingTripId = null;
 
-// =============================================
+  document.getElementById('tripModalTitle').textContent = '✈️ 여행 추가';
 
-function renderMainPage(){
+  document.getElementById('tripTitle').value = '';
 
-    $('page-main').classList.remove('hidden');
+  document.getElementById('tripDest').value = '';
 
-    $('page-trip').classList.add('hidden');
+  document.getElementById('tripStart').value = '';
 
-    $('breadcrumb').innerHTML='';
+  document.getElementById('tripEnd').value = '';
 
-    const grid=$('trip-grid'); grid.innerHTML='';
+  document.getElementById('tripEmoji').value = '✈️';
 
-    trips.forEach(trip=>{
+  document.getElementById('tripModal').classList.add('show');
 
-        const st=getTripStatus(trip), badge=getBadge(st);
+}
 
-        const {b,a}=calcTrip(trip);
+ 
 
-        const pct=b>0?Math.min((a/b)*100,100):0;
+function openEditTrip(id) {
 
-        const over=a>b&&b>0;
+  const t = trips.find(x => x.id == id);
 
-        const card=document.createElement('div');
+  if (!t) return;
 
-        card.className='trip-card';
+  editingTripId = id;
 
-        card.innerHTML=`
+  document.getElementById('tripModalTitle').textContent = '✈️ 여행 수정';
 
-            <div class="trip-card-thumb" style="background:linear-gradient(135deg,${trip.color}33,${trip.color}66)">
+  document.getElementById('tripTitle').value = t.title;
 
-                <span style="font-size:56px">${trip.emoji}</span>
+  document.getElementById('tripDest').value = t.destination;
 
-                <span class="trip-card-badge ${badge.cls}">${badge.text}</span>
+  document.getElementById('tripStart').value = t.startDate;
+
+  document.getElementById('tripEnd').value = t.endDate;
+
+  document.getElementById('tripEmoji').value = t.emoji || '✈️';
+
+  document.getElementById('tripModal').classList.add('show');
+
+}
+
+ 
+
+function closeTripModal() {
+
+  document.getElementById('tripModal').classList.remove('show');
+
+}
+
+ 
+
+async function saveTrip() {
+
+  const title = document.getElementById('tripTitle').value.trim();
+
+  const dest = document.getElementById('tripDest').value.trim();
+
+  const start = document.getElementById('tripStart').value;
+
+  const end = document.getElementById('tripEnd').value;
+
+  const emoji = document.getElementById('tripEmoji').value || '✈️';
+
+  if (!title || !dest || !start || !end) { alert('모든 항목을 입력해주세요!'); return; }
+
+ 
+
+  const data = {
+
+    id: editingTripId || Date.now().toString(),
+
+    title, destination: dest, startDate: start, endDate: end, emoji
+
+  };
+
+ 
+
+  try {
+
+    const action = editingTripId ? 'updateTrip' : 'saveTrip';
+
+    await fetch(`${API_URL}?action=${action}&data=${encodeURIComponent(JSON.stringify(data))}`);
+
+    closeTripModal();
+
+    await loadData();
+
+  } catch(e) {
+
+    alert('저장 실패! 다시 시도해주세요.');
+
+  }
+
+}
+
+ 
+
+async function deleteTrip(id) {
+
+  if (!confirm('이 여행을 삭제할까요? 관련 일정도 모두 삭제돼요!')) return;
+
+  try {
+
+    await fetch(`${API_URL}?action=deleteTrip&id=${id}`);
+
+    if (selectedTripId == id) selectedTripId = null;
+
+    await loadData();
+
+  } catch(e) {
+
+    alert('삭제 실패!');
+
+  }
+
+}
+
+ 
+
+// ── 일정 ──
+
+function renderSchedules() {
+
+  const el = document.getElementById('scheduleList');
+
+  if (!selectedTripId) {
+
+    el.innerHTML = '<div class="empty"><div class="icon">📅</div>여행을 선택해주세요</div>';
+
+    return;
+
+  }
+
+  const list = schedules.filter(s => String(s.tripId) === String(selectedTripId))
+
+    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+
+ 
+
+  if (!list.length) {
+
+    el.innerHTML = '<div class="empty"><div class="icon">📅</div>일정을 추가해보세요!</div>';
+
+    return;
+
+  }
+
+ 
+
+  const grouped = {};
+
+  list.forEach(s => {
+
+    if (!grouped[s.date]) grouped[s.date] = [];
+
+    grouped[s.date].push(s);
+
+  });
+
+ 
+
+  el.innerHTML = Object.keys(grouped).sort().map(date => `
+
+    <div class="date-group">
+
+      <div class="date-label">📅 ${date}</div>
+
+      ${grouped[date].map(s => `
+
+        <div class="schedule-item">
+
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+
+            <div>
+
+              <span class="category-badge" style="background:#f0f4ff;color:#667eea">${s.category||''}</span>
+
+              <strong>${s.title}</strong>
 
             </div>
 
-            <div class="trip-card-body">
+            <div style="display:flex;gap:6px">
 
-                <h3>${trip.title}</h3>
+              <button class="btn btn-sm" style="background:#f0f4ff;color:#667eea" onclick="openEditSchedule('${s.id}')">수정</button>
 
-                <p>📍 ${trip.destination}</p>
-
-                <p>📅 ${trip.startDate} ~ ${trip.endDate}</p>
-
-                ${b>0?`<div class="trip-budget-mini">
-
-                    <div class="trip-budget-mini-row">
-
-                        <span>💰 ${comma(b)}원</span>
-
-                        <span style="color:${over?'#e53e3e':'#38a169'}">💸 ${comma(a)}원</span>
-
-                    </div>
-
-                    <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${pct}%;background:${over?'#fc8181':'#4f86f7'}"></div></div>
-
-                </div>`:''}
+              <button class="btn btn-danger btn-sm" onclick="deleteSchedule('${s.id}')">삭제</button>
 
             </div>
 
-            <div class="trip-card-actions">
+          </div>
 
-                <button class="btn btn-primary" style="flex:1;font-size:13px" onclick="openTrip(${trip.id})">보기</button>
+          <p style="margin-top:6px">
 
-                <button class="btn btn-secondary" onclick="openEditTripModal(${trip.id},event)">✏️</button>
+            ${s.time ? `⏰ ${s.time}${s.endTime?' ~ '+s.endTime:''}` : ''}
 
-                <button class="btn btn-danger" onclick="deleteTripHandler(${trip.id},event)">🗑️</button>
+            ${s.location ? `&nbsp; 📍 ${s.location}` : ''}
 
-            </div>`;
+          </p>
 
-        grid.appendChild(card);
+          ${s.budget||s.actual ? `<p>💰 예산 ${Number(s.budget||0).toLocaleString()}원 / 실지출 ${Number(s.actual||0).toLocaleString()}원</p>` : ''}
 
-    });
-
-}
-
-function goHome(){ renderMainPage(); }
-
- 
-
-// =============================================
-
-//  여행 상세
-
-// =============================================
-
-function openTrip(tripId){
-
-    currentTripId=tripId; currentDayIndex=0;
-
-    const trip=trips.find(t=>t.id===tripId);
-
-    $('page-main').classList.add('hidden');
-
-    $('page-trip').classList.remove('hidden');
-
-    $('trip-header').innerHTML=`
-
-        <div class="trip-header-emoji">${trip.emoji}</div>
-
-        <div class="trip-header-info">
-
-            <h2>${trip.title}</h2>
-
-            <p>📍 ${trip.destination} &nbsp;|&nbsp; 📅 ${trip.startDate} ~ ${trip.endDate}</p>
-
-        </div>`;
-
-    $('breadcrumb').innerHTML=`<span onclick="goHome()">홈</span><span>›</span><span>${trip.title}</span>`;
-
-    renderBudget(trip); renderDateTabs(trip); renderPhotos(trip); renderSchedules(trip);
-
-}
-
- 
-
-// =============================================
-
-//  예산 렌더
-
-// =============================================
-
-function renderBudget(trip){
-
-    const {b,a,r}=calcTrip(trip);
-
-    const pct=b>0?Math.round((a/b)*100):0;
-
-    const over=r<0;
-
-    $('total-budget').textContent=comma(b)+'원';
-
-    $('total-actual').textContent=comma(a)+'원';
-
-    const re=$('total-remain');
-
-    re.textContent=(over?'▲ ':'')+comma(Math.abs(r))+'원';
-
-    re.className='b-value '+(over?'b-over':'b-remain');
-
-    const bar=$('budget-bar');
-
-    bar.style.width=Math.min(pct,100)+'%';
-
-    bar.className='budget-bar-fill '+(over?'over':'ok');
-
-    $('budget-percent-label').textContent=pct+'%'+(over?' ⚠️ 초과!':'');
-
-    const dates=getDates(trip.startDate,trip.endDate);
-
-    const dl=$('day-budget-list'); dl.innerHTML='';
-
-    dates.forEach((date,i)=>{
-
-        const {b:db,a:da}=calcDay(trip,date);
-
-        const dp=db>0?Math.min((da/db)*100,100):0;
-
-        const dov=da>db&&db>0;
-
-        const row=document.createElement('div');
-
-        row.className='day-budget-row';
-
-        row.innerHTML=`
-
-            <span class="day-label">DAY${i+1}</span>
-
-            <div class="day-bar-bg"><div class="day-bar-fill" style="width:${dp}%;background:${dov?'#fc8181':'#63b3ed'}"></div></div>
-
-            <span class="day-amounts"><span style="color:#4f86f7">${comma(db)}</span> / <span style="color:${dov?'#e53e3e':'#38a169'}">${comma(da)}</span>원</span>`;
-
-        row.onclick=()=>{ currentDayIndex=i; renderDateTabs(trip); renderPhotos(trip); renderSchedules(trip); };
-
-        dl.appendChild(row);
-
-    });
-
-}
-
-function toggleDayBudget(){
-
-    const el=$('day-budget-list'), t=document.querySelector('.day-budget-toggle');
-
-    el.classList.toggle('hidden');
-
-    t.textContent=el.classList.contains('hidden')?'📊 날짜별 상세 보기 ▼':'📊 날짜별 상세 접기 ▲';
-
-}
-
- 
-
-// =============================================
-
-//  날짜 탭
-
-// =============================================
-
-function renderDateTabs(trip){
-
-    const dates=getDates(trip.startDate,trip.endDate);
-
-    const tabs=$('date-tabs'); tabs.innerHTML='';
-
-    dates.forEach((date,i)=>{
-
-        const hasSch=(trip.schedules[date]||[]).length>0;
-
-        const hasPht=((trip.photos||{})[date]||[]).length>0;
-
-        const tab=document.createElement('div');
-
-        tab.className=`date-tab ${i===currentDayIndex?'active':''}`;
-
-        tab.innerHTML=`
-
-            <div class="day-label">DAY ${i+1}</div>
-
-            <div class="day-num">${fmtDate(date)}</div>
-
-            <div class="day-of-week">${dow(date)}</div>
-
-            ${(hasSch||hasPht)&&i!==currentDayIndex?'<div class="day-dot"></div>':''}`;
-
-        tab.onclick=()=>{ currentDayIndex=i; renderDateTabs(trip); renderPhotos(trip); renderSchedules(trip); };
-
-        tabs.appendChild(tab);
-
-    });
-
-}
-
- 
-
-// =============================================
-
-//  사진 렌더
-
-// =============================================
-
-function renderPhotos(trip){
-
-    const dates=getDates(trip.startDate,trip.endDate);
-
-    const date=dates[currentDayIndex];
-
-    const photos=((trip.photos||{})[date])||[];
-
-    const grid=$('photo-grid');
-
-    grid.innerHTML=`
-
-        <label class="photo-upload-btn" for="photo-upload-input">
-
-            <div class="upload-icon">📷</div>
-
-            <span>사진 추가</span>
-
-        </label>
-
-        <input type="file" id="photo-upload-input" class="photo-upload-input" accept="image/*" multiple>`;
-
-    $('photo-upload-input').addEventListener('change', handlePhotoUpload);
-
-    $('photo-count').textContent=photos.length>0?`${photos.length}장`:'';
-
-    if(!photos.length){
-
-        const em=document.createElement('div');
-
-        em.className='photo-empty'; em.textContent='📷 이날의 사진을 추가해보세요!';
-
-        grid.appendChild(em); return;
-
-    }
-
-    photos.forEach((photo,idx)=>{
-
-        const item=document.createElement('div');
-
-        item.className='photo-item';
-
-        item.innerHTML=`
-
-            <img src="${photo.url}" alt="${photo.caption}" loading="lazy">
-
-            ${photo.uploading?'<div class="photo-uploading">⏳ 업로드 중...</div>':''}
-
-            <button class="photo-delete" title="삭제">✕</button>`;
-
-        item.querySelector('.photo-delete').onclick=(e)=>deletePhoto(photo.id, photo.path, e);
-
-        if(!photo.uploading) item.querySelector('img').onclick=()=>openViewer(photos.filter(p=>!p.uploading),idx);
-
-        grid.appendChild(item);
-
-    });
-
-}
-
- 
-
-// 뷰어
-
-function openViewer(photos,idx){ viewerPhotos=photos; viewerIndex=idx; updateViewer(); $('photo-viewer').classList.remove('hidden'); }
-
-function updateViewer(){ const p=viewerPhotos[viewerIndex]; $('viewer-img').src=p.url; $('viewer-caption').textContent=`${p.caption} (${viewerIndex+1}/${viewerPhotos.length})`; }
-
-function viewerNav(d){ viewerIndex=(viewerIndex+d+viewerPhotos.length)%viewerPhotos.length; updateViewer(); }
-
-function closeViewer(){ $('photo-viewer').classList.add('hidden'); }
-
-document.addEventListener('keydown',e=>{
-
-    if(!$('photo-viewer').classList.contains('hidden')){
-
-        if(e.key==='ArrowLeft') viewerNav(-1);
-
-        if(e.key==='ArrowRight') viewerNav(1);
-
-        if(e.key==='Escape') closeViewer();
-
-    }
-
-});
-
- 
-
-// =============================================
-
-//  일정 렌더
-
-// =============================================
-
-function renderSchedules(trip){
-
-    const dates=getDates(trip.startDate,trip.endDate);
-
-    const date=dates[currentDayIndex];
-
-    const scheds=(trip.schedules[date]||[]).slice().sort((a,b)=>a.time.localeCompare(b.time));
-
-    $('selected-date-title').textContent=`DAY ${currentDayIndex+1} · ${fmtFull(date)}`;
-
-    const {b:db,a:da,r:dr}=calcDay(trip,date);
-
-    $('day-budget-mini').innerHTML=db>0||da>0?`
-
-        <span class="dbi-plan">💰 예산 ${comma(db)}원</span>
-
-        <span class="dbi-actual">💸 지출 ${comma(da)}원</span>
-
-        <span class="${dr<0?'dbi-diff-over':'dbi-diff-ok'}">${dr<0?'▲ 초과 '+comma(Math.abs(dr)):'✓ 잔여 '+comma(dr)}원</span>`:'';
-
-    const list=$('schedule-list'); list.innerHTML='';
-
-    if(!scheds.length){
-
-        list.innerHTML=`<div class="empty-schedule"><div class="empty-icon">📋</div><p>아직 일정이 없습니다</p><p style="font-size:12px;margin-top:4px;color:#cbd5e0">+ 일정 추가 버튼을 눌러보세요</p></div>`;
-
-        return;
-
-    }
-
-    scheds.forEach(sch=>{
-
-        const item=document.createElement('div');
-
-        item.className='schedule-item';
-
-        item.innerHTML=`
-
-            <div class="schedule-time">${sch.time}</div>
-
-            <div class="schedule-dot dot-${sch.category}"></div>
-
-            <div class="schedule-content">
-
-                <h4>${sch.emoji||''} ${sch.title}</h4>
-
-                <p>${sch.location||''} ${sch.endTime?'· ~'+sch.endTime:''}</p>
-
-            </div>
-
-            <div class="schedule-budget-info">
-
-                ${Number(sch.budget)>0?`<span class="sbi-plan">예산 ${comma(sch.budget)}원</span>`:''}
-
-                ${sch.actual!==''&&sch.actual!==undefined?`<span class="sbi-actual">지출 ${comma(sch.actual)}원</span>`:''}
-
-            </div>
-
-            <span class="schedule-category cat-${sch.category}">${sch.category}</span>
-
-            <div class="schedule-item-actions">
-
-                <button class="icon-btn" onclick="openEditScheduleModal(${sch.id},event)">✏️</button>
-
-                <button class="icon-btn" onclick="deleteSchedule(${sch.id},event)">🗑️</button>
-
-            </div>`;
-
-        item.addEventListener('click',()=>openDetailModal(sch));
-
-        list.appendChild(item);
-
-    });
-
-}
-
- 
-
-// =============================================
-
-//  상세 모달
-
-// =============================================
-
-function openDetailModal(sch){
-
-    const pl=Number(sch.budget||0), ac=Number(sch.actual||0);
-
-    const diff=pl-ac, over=diff<0;
-
-    const pct=pl>0?Math.min(Math.round((ac/pl)*100),200):0;
-
-    const kakao=sch.location?`https://map.kakao.com/link/search/${encodeURIComponent(sch.location)}`:null;
-
-    const naver=sch.location?`https://map.naver.com/v5/search/${encodeURIComponent(sch.location)}`:null;
-
-    $('detail-modal-body').innerHTML=`
-
-        <span class="detail-emoji">${sch.emoji||'📌'}</span>
-
-        <div class="detail-title">${sch.title}</div>
-
-        <div class="detail-meta">
-
-            <span class="detail-tag cat-${sch.category}">${sch.category}</span>
-
-            <span class="detail-tag" style="background:#f0f0f0;color:#666">🕐 ${sch.time}${sch.endTime?' ~ '+sch.endTime:''}</span>
+          ${s.memo ? `<p style="color:#aaa;font-size:0.8rem;margin-top:4px">📝 ${s.memo}</p>` : ''}
 
         </div>
 
-        ${pl>0||ac>0?`
+      `).join('')}
 
-        <div class="detail-budget-box">
+    </div>
 
-            <div class="db-title">💰 예산 현황</div>
+  `).join('');
 
-            <div class="detail-budget-row"><span class="db-label">예산</span><span class="db-val db-val-plan">${comma(pl)}원</span></div>
+}
 
-            <div class="detail-budget-row"><span class="db-label">실제 지출</span><span class="db-val db-val-actual">${comma(ac)}원</span></div>
+ 
 
-            <div class="detail-budget-row"><span class="db-label">${over?'초과':'절약'}</span><span class="db-val ${over?'db-val-over':'db-val-ok'}">${over?'▲ ':''} ${comma(Math.abs(diff))}원</span></div>
+function openAddSchedule() {
 
-            ${pl>0?`<div style="margin-top:10px"><div class="budget-bar-bg"><div class="budget-bar-fill ${over?'over':'ok'}" style="width:${Math.min(pct,100)}%"></div></div>
+  if (!selectedTripId) { alert('먼저 여행을 선택해주세요!'); return; }
 
-            <div style="text-align:right;font-size:12px;font-weight:bold;margin-top:4px;color:${over?'#e53e3e':'#4f86f7'}">${pct}% 사용</div></div>`:''}
+  editingScheduleId = null;
 
-        </div>`:''}
+  document.getElementById('scheduleModalTitle').textContent = '📅 일정 추가';
 
-        <div class="detail-info-grid">
+  document.getElementById('schedDate').value = '';
 
-            <div class="detail-info-item"><div class="label">📍 장소</div><div class="value">${sch.location||'-'}</div></div>
+  document.getElementById('schedTime').value = '';
 
-            <div class="detail-info-item"><div class="label">🏷️ 카테고리</div><div class="value">${sch.category}</div></div>
+  document.getElementById('schedEndTime').value = '';
+
+  document.getElementById('schedTitle').value = '';
+
+  document.getElementById('schedCategory').value = '🎡 관광';
+
+  document.getElementById('schedLocation').value = '';
+
+  document.getElementById('schedBudget').value = '';
+
+  document.getElementById('schedActual').value = '';
+
+  document.getElementById('schedMemo').value = '';
+
+  document.getElementById('scheduleModal').classList.add('show');
+
+}
+
+ 
+
+function openEditSchedule(id) {
+
+  const s = schedules.find(x => x.id == id);
+
+  if (!s) return;
+
+  editingScheduleId = id;
+
+  document.getElementById('scheduleModalTitle').textContent = '📅 일정 수정';
+
+  document.getElementById('schedDate').value = s.date;
+
+  document.getElementById('schedTime').value = s.time;
+
+  document.getElementById('schedEndTime').value = s.endTime;
+
+  document.getElementById('schedTitle').value = s.title;
+
+  document.getElementById('schedCategory').value = s.category;
+
+  document.getElementById('schedLocation').value = s.location;
+
+  document.getElementById('schedBudget').value = s.budget;
+
+  document.getElementById('schedActual').value = s.actual;
+
+  document.getElementById('schedMemo').value = s.memo;
+
+  document.getElementById('scheduleModal').classList.add('show');
+
+}
+
+ 
+
+function closeScheduleModal() {
+
+  document.getElementById('scheduleModal').classList.remove('show');
+
+}
+
+ 
+
+async function saveSchedule() {
+
+  const title = document.getElementById('schedTitle').value.trim();
+
+  const date = document.getElementById('schedDate').value;
+
+  if (!title || !date) { alert('날짜와 일정 이름은 필수예요!'); return; }
+
+ 
+
+  const data = {
+
+    id: editingScheduleId || Date.now().toString(),
+
+    tripId: selectedTripId,
+
+    date, title,
+
+    time: document.getElementById('schedTime').value,
+
+    endTime: document.getElementById('schedEndTime').value,
+
+    category: document.getElementById('schedCategory').value,
+
+    location: document.getElementById('schedLocation').value,
+
+    budget: document.getElementById('schedBudget').value,
+
+    actual: document.getElementById('schedActual').value,
+
+    memo: document.getElementById('schedMemo').value,
+
+  };
+
+ 
+
+  try {
+
+    const action = editingScheduleId ? 'updateSchedule' : 'saveSchedule';
+
+    await fetch(`${API_URL}?action=${action}&data=${encodeURIComponent(JSON.stringify(data))}`);
+
+    closeScheduleModal();
+
+    await loadData();
+
+    renderSchedules();
+
+  } catch(e) {
+
+    alert('저장 실패! 다시 시도해주세요.');
+
+  }
+
+}
+
+ 
+
+async function deleteSchedule(id) {
+
+  if (!confirm('이 일정을 삭제할까요?')) return;
+
+  try {
+
+    await fetch(`${API_URL}?action=deleteSchedule&id=${id}`);
+
+    await loadData();
+
+    renderSchedules();
+
+  } catch(e) {
+
+    alert('삭제 실패!');
+
+  }
+
+}
+
+ 
+
+// ── 예산 ──
+
+function renderBudget() {
+
+  const el = document.getElementById('budgetContent');
+
+  if (!selectedTripId) {
+
+    el.innerHTML = '<div class="empty"><div class="icon">💰</div>여행을 선택해주세요</div>';
+
+    return;
+
+  }
+
+  const list = schedules.filter(s => String(s.tripId) === String(selectedTripId));
+
+  const totalBudget = list.reduce((sum,s) => sum + Number(s.budget||0), 0);
+
+  const totalActual = list.reduce((sum,s) => sum + Number(s.actual||0), 0);
+
+  const remain = totalBudget - totalActual;
+
+ 
+
+  el.innerHTML = `
+
+    <div class="budget-summary">
+
+      <div class="budget-box total">
+
+        <div class="label">총 예산</div>
+
+        <div class="amount">${totalBudget.toLocaleString()}원</div>
+
+      </div>
+
+      <div class="budget-box spent">
+
+        <div class="label">실제 지출</div>
+
+        <div class="amount">${totalActual.toLocaleString()}원</div>
+
+      </div>
+
+      <div class="budget-box remain">
+
+        <div class="label">남은 예산</div>
+
+        <div class="amount">${remain.toLocaleString()}원</div>
+
+      </div>
+
+    </div>
+
+    <div class="card">
+
+      <h3 style="margin-bottom:14px">💳 지출 내역</h3>
+
+      ${list.filter(s => s.actual).map(s => `
+
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0">
+
+          <div>
+
+            <span style="font-size:0.85rem">${s.category||''}</span>
+
+            <span style="margin-left:8px">${s.title}</span>
+
+            <div style="font-size:0.75rem;color:#aaa">${s.date}</div>
+
+          </div>
+
+          <div style="text-align:right">
+
+            <div style="color:#ff6b6b;font-weight:bold">${Number(s.actual).toLocaleString()}원</div>
+
+            <div style="font-size:0.75rem;color:#aaa">예산 ${Number(s.budget||0).toLocaleString()}원</div>
+
+          </div>
 
         </div>
 
-        ${sch.location?`<div style="display:flex;gap:8px;margin-bottom:12px">
+      `).join('') || '<div style="color:#aaa;text-align:center;padding:20px">지출 내역이 없어요</div>'}
 
-            <a href="${kakao}" target="_blank" class="map-link-btn" style="background:#FEE500;color:#3C1E1E">🗺️ 카카오맵</a>
+    </div>
 
-            <a href="${naver}" target="_blank" class="map-link-btn" style="background:#03C75A;color:white">🗺️ 네이버맵</a>
-
-        </div>`:''}
-
-        ${sch.desc?`<div class="detail-desc">${sch.desc}</div>`:''}
-
-        <div class="detail-memo">
-
-            <div class="label">🗒️ 메모</div>
-
-            <textarea rows="3" placeholder="메모를 입력하세요..." onchange="updateMemo(${sch.id},this.value)">${sch.memo||''}</textarea>
-
-        </div>`;
-
-    openModal('detail-modal');
+  `;
 
 }
 
  
 
-function updateMemo(schId,val){
+// ── FAB 버튼 ──
 
-    const trip=trips.find(t=>t.id===currentTripId);
+document.addEventListener('click', e => {
 
-    Object.values(trip.schedules||{}).forEach(arr=>{ const s=arr.find(x=>x.id===schId); if(s){ s.memo=val; saveData(); } });
+  if (e.target.closest('#mainPage') && !e.target.closest('.modal')) {
 
-}
+    // FAB는 탭별로 다르게
 
- 
+  }
 
-// =============================================
-
-//  일정 CRUD
-
-// =============================================
-
-function openAddScheduleModal(){
-
-    editingScheduleId=null;
-
-    $('schedule-modal-title').textContent='일정 추가';
-
-    ['sch-title','sch-location','sch-emoji','sch-desc','sch-memo'].forEach(id=>$(id).value='');
-
-    $('sch-start').value=''; $('sch-end').value=''; $('sch-budget').value=''; $('sch-actual').value=''; $('sch-category').value='관광';
-
-    openModal('schedule-modal');
-
-}
-
-function openEditScheduleModal(schId,e){
-
-    e.stopPropagation(); editingScheduleId=schId;
-
-    const trip=trips.find(t=>t.id===currentTripId);
-
-    let sch=null; Object.values(trip.schedules||{}).forEach(arr=>{ const f=arr.find(s=>s.id===schId); if(f) sch=f; });
-
-    if(!sch) return;
-
-    $('schedule-modal-title').textContent='일정 수정';
-
-    $('sch-title').value=sch.title; $('sch-start').value=sch.time; $('sch-end').value=sch.endTime||'';
-
-    $('sch-category').value=sch.category; $('sch-budget').value=sch.budget||''; $('sch-actual').value=sch.actual!==undefined?sch.actual:'';
-
-    $('sch-location').value=sch.location||''; $('sch-emoji').value=sch.emoji||''; $('sch-desc').value=sch.desc||''; $('sch-memo').value=sch.memo||'';
-
-    openModal('schedule-modal');
-
-}
-
-async function saveSchedule(){
-
-    const title=$('sch-title').value.trim();
-
-    if(!title){ alert('제목을 입력해주세요'); return; }
-
-    const trip=trips.find(t=>t.id===currentTripId);
-
-    const dates=getDates(trip.startDate,trip.endDate);
-
-    const date=dates[currentDayIndex];
-
-    if(!trip.schedules) trip.schedules={};
-
-    if(!trip.schedules[date]) trip.schedules[date]=[];
-
-    const data={ title, time:$('sch-start').value||'00:00', endTime:$('sch-end').value, category:$('sch-category').value,
-
-        budget:$('sch-budget').value, actual:$('sch-actual').value, location:$('sch-location').value,
-
-        emoji:$('sch-emoji').value||'📌', desc:$('sch-desc').value, memo:$('sch-memo').value };
-
-    if(editingScheduleId){
-
-        Object.values(trip.schedules).forEach(arr=>{ const idx=arr.findIndex(s=>s.id===editingScheduleId); if(idx!==-1) arr[idx]={...arr[idx],...data}; });
-
-    } else {
-
-        trip.schedules[date].push({ id:nextId++, ...data });
-
-    }
-
-    closeModal('schedule-modal');
-
-    renderBudget(trip); renderDateTabs(trip); renderSchedules(trip);
-
-    await saveData();
-
-}
-
-async function deleteSchedule(schId,e){
-
-    e.stopPropagation();
-
-    if(!confirm('이 일정을 삭제하시겠습니까?')) return;
-
-    const trip=trips.find(t=>t.id===currentTripId);
-
-    Object.keys(trip.schedules||{}).forEach(d=>{ trip.schedules[d]=trip.schedules[d].filter(s=>s.id!==schId); });
-
-    renderBudget(trip); renderSchedules(trip);
-
-    await saveData();
-
-}
-
- 
-
-// =============================================
-
-//  여행 CRUD
-
-// =============================================
-
-function openAddTripModal(){
-
-    editingTripId=null; $('trip-modal-title').textContent='새 여행 추가';
-
-    ['trip-title','trip-dest','trip-emoji'].forEach(id=>$(id).value='');
-
-    $('trip-start').value=''; $('trip-end').value=''; $('trip-color').value='#667eea';
-
-    openModal('trip-modal');
-
-}
-
-function openEditTripModal(tripId,e){
-
-    e.stopPropagation(); editingTripId=tripId;
-
-    const trip=trips.find(t=>t.id===tripId);
-
-    $('trip-modal-title').textContent='여행 수정';
-
-    $('trip-title').value=trip.title; $('trip-start').value=trip.startDate; $('trip-end').value=trip.endDate;
-
-    $('trip-dest').value=trip.destination; $('trip-emoji').value=trip.emoji; $('trip-color').value=trip.color;
-
-    openModal('trip-modal');
-
-}
-
-async function saveTrip(){
-
-    const title=$('trip-title').value.trim(), s=$('trip-start').value, e=$('trip-end').value;
-
-    if(!title||!s||!e){ alert('제목과 날짜를 입력해주세요'); return; }
-
-    if(s>e){ alert('종료일이 시작일보다 빠를 수 없습니다'); return; }
-
-    const data={ title, startDate:s, endDate:e, destination:$('trip-dest').value, emoji:$('trip-emoji').value||'✈️', color:$('trip-color').value };
-
-    if(editingTripId){ const idx=trips.findIndex(t=>t.id===editingTripId); trips[idx]={...trips[idx],...data}; }
-
-    else { trips.push({ id:nextId++, schedules:{}, photos:{}, ...data }); }
-
-    closeModal('trip-modal'); renderMainPage();
-
-    await saveData();
-
-}
-
-async function deleteTripHandler(tripId,e){
-
-    e.stopPropagation();
-
-    if(!confirm('이 여행을 삭제하시겠습니까?')) return;
-
-    trips=trips.filter(t=>t.id!==tripId);
-
-    renderMainPage(); await saveData();
-
-}
-
- 
-
-// 전역 노출
-
-window.goHome=goHome; window.openTrip=openTrip;
-
-window.openAddTripModal=openAddTripModal; window.openEditTripModal=openEditTripModal; window.deleteTripHandler=deleteTripHandler; window.saveTrip=saveTrip;
-
-window.openAddScheduleModal=openAddScheduleModal; window.openEditScheduleModal=openEditScheduleModal; window.deleteSchedule=deleteSchedule; window.saveSchedule=saveSchedule;
-
-window.toggleDayBudget=toggleDayBudget; window.closeModal=closeModal;
-
-window.openDetailModal=openDetailModal; window.updateMemo=updateMemo;
-
-window.viewerNav=viewerNav; window.closeViewer=closeViewer;
-
-window.doLogin=doLogin; window.doLogout=doLogout;
-
- 
+});
 
 </script>
+
+ 
+
+<!-- FAB 버튼 -->
+
+<button class="add-btn" onclick="currentTab==='trips'?openAddTrip():currentTab==='schedule'?openAddSchedule():null" title="추가">+</button>
+
+ 
 
 </body>
 
 </html>
+
