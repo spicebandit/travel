@@ -952,13 +952,18 @@
 
     async function saveToServer() {
 
+      const form = new URLSearchParams();
+      form.set('action', 'save');
+      form.set('secret', API_SECRET);
+      form.set('trips', JSON.stringify(trips));
+      
       const res = await fetch(API_URL, {
 
         method: 'POST',
 
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
 
-        body: JSON.stringify({ action: 'save', secret: API_SECRET, trips })
+        body: form.toString() 
 
       });
 
