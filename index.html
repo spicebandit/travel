@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✈️ 나의 여행 일정</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&language=ko" async defer></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; color: #333; }
+        .hidden { display: none !important; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; font-family: inherit; }
+        .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+        .btn-primary { background: #4f86f7; color: white; }
+        .btn-secondary { background: #e2e8f0; color: #555; }
+        .btn-danger { background: #fc8181; color: white; }
+
+        /* ===== 🔐 비밀번호 잠금 화면 ===== */
+        #lock-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .lock-card {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 28px;
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+            animation: lockIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes lockIn {
+            from { opacity: 0; transform: scale(0.85) translateY(30px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .lock-icon { font-size: 56px; margin-bottom: 12px; display: block; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+        .lock-title { color: white; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+        .lock-subtitle { color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 32px; }
+
+        /* PIN 입력 점들 */
+        .pin-dots { display: flex; gap: 14px; justify-content: center; margin-bottom: 28px; }
+        .pin-dot {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3);
+            transition: all 0.2s;
+        }
+        .pin-dot.filled { background: #4f86f7; border-color: #4f86f7; transform: scale(1.2); box-shadow: 0 0 12px rgba(79,134,247,0.6); }
+
+        /* 숫자 키패드 */
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+        .key-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: white;
+            font-size: 22px;
+            font-weight: 600;
+            padding: 18px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .key-btn:hover { background: rgba(255,255,255,0.18); transform: scale(1.05); }
+        .key-btn:active { transform: scale(0.95); background: rgba(79,134,247,0.4); }
+        .key-btn.key-del { font-size: 18px; background: rgba(252,129,129,0.15); border-color: rgba(252,129,129,0.2); }
+        .key-btn.key-del:hover { background: rgba(252,129,129,0.3); }
+        .key-btn.key-empty { visibility: hidden; }
+
+        .lock-error { color: #fc8181; font-size: 13px; min-height: 20px; margin-top: -8px; margin-bottom: 8px; animation: shake 0.4s ease; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+
+        /* 비밀번호 변경 힌트 */
+        .lock-hint { color: rgba(255,255,255,0.3); font-size: 11px; margin-top: 16px; cursor: pointer; }
+        .lock-hint:hover { color: rgba(255,255,255,0.6); }
+
+        /* 잠금 해제 애니메이션 */
+        #lock-screen.unlocking {
+            animation: unlockAnim 0.5s ease forwards;
+        }
+        @keyframes unlockAnim {
+            0% { opacity:1; transform:scale(1); }
+            50% { opacity:0.5; transform:scale(1.05); }
+            100% { opacity:0; transform:scale(1.1); pointer-events:none; }
+        }
+
+        /* 비밀번호 설정 모달 */
+        .pw-setup-box { margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
+        .pw-setup-box input {
+            width: 100%; padding: 10px 14px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px; color: white;
+            font-size: 18px; letter-spacing: 6px; text-align: center;
+            outline: none; font-family: inherit;
+        }
+        .pw-setup-box input::placeholder { letter-spacing: 2px; font-size: 13px; color: rgba(255,255,255,0.4); }
+
+        /* ===== 헤더 ===== */
+        header { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
+        header h1 { font-size: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .breadcrumb { font-size: 12px; opacity: 0.85; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+        .breadcrumb span { cursor: pointer; }
+        .breadcrumb span:hover { text-decoration: underline; }
+        .header-actions { display: flex; align-items: center; gap: 8px; }
+        .lock-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; transition: all 0.2s; font-family: inherit; }
+        .lock-btn:hover { background: rgba(255,255,255,0.35); }
+
+        /* ===== 메인 페이지 ===== */
+        #page-main { max-width: 1000px; margin: 0 auto; padding: 30px 16px; }
+        .page-title { text-align: center; margin-bottom: 30px; }
+        .page-title h2 { font-size: 24px; color: #4a5568; margin-bottom: 6px; }
+        .page-title p { color: #718096; font-size: 14px; }
+        .trip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .trip-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); cursor: pointer; transition: all 0.3s; position: relative; }
+        .trip-card:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0,0,0,0.15); }
+        .trip-card-thumb { height: 140px; display: flex; align-items: center; justify-content: center; font-size: 56px; position: relative; overflow: hidden; }
+        .trip-card-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        .trip-card-thumb .thumb-emoji { position: relative; z-index: 1; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .trip-card-badge { position: absolute; top: 10px; right: 10px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: bold; color: white; z-index: 2; }
+        .badge-current { background: #48bb78; }
+        .badge-past { background: #a0aec0; }
+        .badge-upcoming { background: #ed8936; }
+        .trip-card-body { padding: 14px; }
+        .trip-card-body h3 { font-size: 16px; margin-bottom: 5px; color: #2d3748; }
+        .trip-card-body p { font-size: 12px; color: #718096; margin-bottom: 3px; }
+        .trip-budget-mini { margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f0f0; }
+        .trip-budget-mini-row { display: flex; justify-content: space-between; font-size: 11px; color: #718096; margin-bottom: 5px; }
+        .mini-bar-bg { height: 5px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+        .mini-bar-fill { height: 100%; border-radius: 10px; transition: width 0.5s; }
+        .trip-card-actions { display: flex; gap: 8px; padding: 10px 14px; border-top: 1px solid #f0f0f0; }
+        .add-trip-btn { width: 100%; padding: 16px; background: white; border: 2px dashed #cbd5e0; border-radius: 16px; cursor: pointer; font-size: 15px; color: #a0aec0; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
+        .add-trip-btn:hover { border-color: #667eea; color: #667eea; background: #f7f8ff; }
+
+        /* ===== 여행 상세 ===== */
+        #page-trip { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
+        .trip-header { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .trip-header-emoji { font-size: 44px; }
+        .trip-header-info { flex: 1; min-width: 200px; }
+        .trip-header-info h2 { font-size: 20px; color: #2d3748; margin-bottom: 4px; }
+        .trip-header-info p { color: #718096; font-size: 13px; }
+
+        /* ===== 예산 ===== */
+        .budget-summary { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+        .budget-summary-title { font-size: 15px; font-weight: bold; color: #2d3748; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+        .budget-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+        .budget-card { background: #f7fafc; border-radius: 12px; padding: 12px; text-align: center; }
+        .budget-card .b-label { font-size: 11px; color: #a0aec0; margin-bottom: 4px; }
+        .budget-card .b-value { font-size: 16px; font-weight: bold; }
+        .b-planned { color: #4f86f7; } .b-actual { color: #e53e3e; } .b-remain { color: #38a169; } .b-over { color: #e53e3e; }
+        .budget-bar-wrap { margin-bottom: 6px; }
+        .budget-bar-labels { display: flex; justify-content: space-between; font-size: 11px; color: #a0aec0; margin-bottom: 4px; }
+        .budget-bar-bg { height: 10px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+        .budget-bar-fill { height: 100%; border-radius: 10px; transition: width 0.6s ease; }
+        .budget-bar-fill.over { background: linear-gradient(90deg, #fc8181, #e53e3e); }
+        .budget-bar-fill.ok { background: linear-gradient(90deg, #63b3ed, #4f86f7); }
+        .budget-percent-text { text-align: right; font-size: 12px; font-weight: bold; margin-top: 4px; }
+        .day-budget-toggle { font-size: 12px; color: #667eea; cursor: pointer; text-align: right; margin-top: 4px; }
+        .day-budget-list { margin-top: 10px; }
+        .day-budget-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+        .day-budget-row:last-child { border-bottom: none; }
+        .day-budget-row .day-label { min-width: 60px; color: #667eea; font-weight: bold; font-size: 12px; }
+        .day-budget-row .day-bar-bg { flex: 1; height: 6px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
+        .day-budget-row .day-bar-fill { height: 100%; border-radius: 6px; }
+        .day-budget-row .day-amounts { font-size: 11px; color: #718096; min-width: 100px; text-align: right; }
+
+        /* ===== 날짜 탭 ===== */
+        .date-tabs-wrapper { background: white; border-radius: 16px; padding: 14px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .date-tabs { display: flex; gap: 8px; min-width: max-content; }
+        .date-tab { padding: 8px 14px; border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; text-align: center; min-width: 70px; background: #f7fafc; position: relative; }
+        .date-tab:hover { border-color: #667eea; }
+        .date-tab.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-color: transparent; }
+        .date-tab .day-label { font-size: 10px; opacity: 0.75; margin-bottom: 2px; }
+        .date-tab .day-num { font-size: 15px; font-weight: bold; }
+        .date-tab .day-of-week { font-size: 10px; opacity: 0.75; }
+        .date-tab .day-dot { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: #48bb78; }
+        .date-tab.active .day-dot { background: white; }
+
+        /* ===== 일정 목록 ===== */
+        .schedule-section { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 16px; }
+        .schedule-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+        .schedule-section-header h3 { font-size: 15px; color: #2d3748; }
+        .day-budget-mini { display: flex; gap: 12px; font-size: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+        .day-budget-mini span { padding: 4px 10px; border-radius: 20px; }
+        .dbi-plan { background: #ebf4ff; color: #2b6cb0; } .dbi-actual { background: #fff5f5; color: #c53030; }
+        .dbi-diff-ok { background: #f0fff4; color: #276749; } .dbi-diff-over { background: #fff5f5; color: #c53030; }
+        .schedule-list { display: flex; flex-direction: column; }
+        .schedule-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 8px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s; border-radius: 8px; }
+        .schedule-item:last-child { border-bottom: none; }
+        .schedule-item:hover { background: #f7f8ff; }
+        .schedule-time { font-size: 12px; color: #667eea; font-weight: bold; min-width: 48px; padding-top: 2px; }
+        .schedule-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+        .schedule-content { flex: 1; min-width: 0; }
+        .schedule-content h4 { font-size: 14px; color: #2d3748; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .schedule-content p { font-size: 12px; color: #718096; }
+
+        /* 📸 일정 썸네일 */
+        .schedule-thumb { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; border: 2px solid #e2e8f0; }
+
+        .schedule-budget-info { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 11px; flex-shrink: 0; }
+        .sbi-plan { color: #4f86f7; } .sbi-actual { color: #e53e3e; font-weight: bold; }
+        .schedule-category { font-size: 10px; padding: 2px 7px; border-radius: 12px; font-weight: bold; flex-shrink: 0; }
+        .schedule-item-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; }
+        .schedule-item:hover .schedule-item-actions { opacity: 1; }
+        .icon-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 4px; border-radius: 6px; transition: background 0.2s; }
+        .icon-btn:hover { background: #edf2f7; }
+        .empty-schedule { text-align: center; padding: 30px; color: #a0aec0; }
+        .empty-schedule .empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+        /* ===== 지도 ===== */
+        .map-section { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 16px; }
+        .map-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .map-section-header h3 { font-size: 15px; color: #2d3748; }
+        #map-container { width: 100%; height: 300px; border-radius: 12px; background: #e2e8f0; overflow: hidden; position: relative; }
+        #google-map { width: 100%; height: 100%; }
+        .map-placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #a0aec0; gap: 8px; background: linear-gradient(135deg, #f7fafc, #edf2f7); }
+        .map-placeholder .map-icon { font-size: 40px; }
+        .map-placeholder p { font-size: 13px; }
+        .map-placeholder small { font-size: 11px; color: #cbd5e0; }
+        .map-api-notice { background: #fffbeb; border: 1px solid #f6e05e; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #744210; margin-top: 10px; display: flex; align-items: flex-start; gap: 8px; }
+        .map-places { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .map-place-chip { padding: 5px 12px; border-radius: 20px; font-size: 12px; background: #f0f4ff; color: #4f86f7; cursor: pointer; border: 1px solid #c3d4ff; transition: all 0.2s; }
+        .map-place-chip:hover, .map-place-chip.active { background: #4f86f7; color: white; }
+
+        /* ===== 📸 사진 갤러리 섹션 ===== */
+        .photo-section { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 16px; }
+        .photo-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .photo-section-header h3 { font-size: 15px; color: #2d3748; }
+        .photo-upload-area {
+            border: 2px dashed #cbd5e0; border-radius: 12px; padding: 24px;
+            text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 14px;
+        }
+        .photo-upload-area:hover, .photo-upload-area.dragover { border-color: #667eea; background: #f7f8ff; }
+        .photo-upload-area input[type="file"] { display: none; }
+        .photo-upload-area .upload-icon { font-size: 32px; margin-bottom: 8px; }
+        .photo-upload-area p { font-size: 13px; color: #718096; }
+        .photo-upload-area small { font-size: 11px; color: #a0aec0; }
+        .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+        .photo-item {
+            position: relative; border-radius: 10px; overflow: hidden;
+            aspect-ratio: 1; cursor: pointer; background: #f0f4f8;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+        .photo-item:hover { transform: scale(1.03); }
+        .photo-item img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-item-del {
+            position: absolute; top: 5px; right: 5px;
+            background: rgba(0,0,0,0.55); color: white;
+            border: none; border-radius: 50%; width: 24px; height: 24px;
+            font-size: 12px; cursor: pointer; display: none;
+            align-items: center; justify-content: center; transition: background 0.2s;
+        }
+        .photo-item:hover .photo-item-del { display: flex; }
+        .photo-item-del:hover { background: rgba(229,62,62,0.85); }
+        .photo-caption {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.6));
+            color: white; font-size: 10px; padding: 12px 6px 5px;
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .photo-item:hover .photo-caption { opacity: 1; }
+
+        /* 사진 라이트박스 */
+        #lightbox {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+            z-index: 300; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px); animation: fadeIn 0.2s ease;
+        }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        #lightbox img { max-width: 90vw; max-height: 85vh; border-radius: 12px; object-fit: contain; }
+        #lightbox-close { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; transition: background 0.2s; }
+        #lightbox-close:hover { background: rgba(255,255,255,0.4); }
+        #lightbox-prev, #lightbox-next { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.15); border: none; color: white; width: 44px; height: 44px; border-radius: 50%; font-size: 20px; cursor: pointer; transition: background 0.2s; }
+        #lightbox-prev { left: 20px; } #lightbox-next { right: 20px; }
+        #lightbox-prev:hover, #lightbox-next:hover { background: rgba(255,255,255,0.3); }
+        .lightbox-caption { position: absolute; bottom: 24px; color: rgba(255,255,255,0.7); font-size: 13px; }
+
+        /* ===== 상세 모달 ===== */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(3px); }
+        .modal { background: white; border-radius: 20px; width: 100%; max-width: 520px; max-height: 92vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalIn 0.25s ease; }
+        @keyframes modalIn { from{opacity:0;transform:scale(0.9) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
+        .modal-header { padding: 20px 20px 0; display: flex; justify-content: space-between; align-items: flex-start; position: sticky; top: 0; background: white; z-index: 1; border-radius: 20px 20px 0 0; }
+        .modal-close { background: #f0f0f0; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .modal-close:hover { background: #e2e2e2; }
+        .modal-body { padding: 16px 20px 20px; }
+        .detail-emoji { font-size: 44px; margin-bottom: 10px; display: block; }
+        .detail-title { font-size: 20px; font-weight: bold; color: #2d3748; margin-bottom: 6px; }
+        .detail-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+        .detail-tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+
+        /* 상세 사진 */
+        .detail-photos { margin-bottom: 14px; }
+        .detail-photos-title { font-size: 12px; color: #a0aec0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .detail-photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .detail-photo-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; cursor: pointer; transition: opacity 0.2s; }
+        .detail-photo-grid img:hover { opacity: 0.85; }
+        .detail-photo-add { width: 100%; aspect-ratio: 1; border: 2px dashed #cbd5e0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #a0aec0; cursor: pointer; transition: all 0.2s; background: none; }
+        .detail-photo-add:hover { border-color: #667eea; color: #667eea; background: #f7f8ff; }
+
+        .detail-budget-box { background: #f7fafc; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+        .detail-budget-box .db-title { font-size: 12px; color: #a0aec0; margin-bottom: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .detail-budget-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .detail-budget-row:last-child { margin-bottom: 0; }
+        .detail-budget-row .db-label { font-size: 13px; color: #718096; }
+        .detail-budget-row .db-val { font-size: 15px; font-weight: bold; }
+        .db-val-plan { color: #4f86f7; } .db-val-actual { color: #e53e3e; }
+        .db-val-ok { color: #38a169; } .db-val-over { color: #e53e3e; }
+        .detail-budget-bar { margin-top: 10px; }
+        .detail-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .detail-info-item { background: #f7fafc; border-radius: 10px; padding: 10px; }
+        .detail-info-item .label { font-size: 10px; color: #a0aec0; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .detail-info-item .value { font-size: 13px; font-weight: 600; color: #2d3748; }
+        #detail-map { width: 100%; height: 180px; border-radius: 10px; background: #e2e8f0; margin-bottom: 14px; overflow: hidden; }
+        .detail-desc { background: #f7fafc; border-radius: 10px; padding: 12px; font-size: 13px; color: #4a5568; line-height: 1.7; margin-bottom: 12px; }
+        .detail-memo { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; }
+        .detail-memo .label { font-size: 11px; color: #a0aec0; margin-bottom: 6px; }
+        .detail-memo textarea { width: 100%; border: none; outline: none; font-size: 13px; color: #4a5568; resize: none; background: transparent; font-family: inherit; line-height: 1.6; }
+
+        /* ===== 폼 ===== */
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; color: #4a5568; margin-bottom: 5px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 9px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; font-family: inherit; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #667eea; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+        .actual-cost-input { border-color: #fc8181 !important; }
+        .actual-cost-input:focus { border-color: #e53e3e !important; box-shadow: 0 0 0 3px rgba(229,62,62,0.1); }
+
+        /* 📸 사진 업로드 (폼 내부) */
+        .photo-upload-mini { border: 2px dashed #e2e8f0; border-radius: 10px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .photo-upload-mini:hover { border-color: #667eea; background: #f7f8ff; }
+        .photo-upload-mini input { display: none; }
+        .photo-preview-mini { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .photo-preview-mini-item { position: relative; width: 60px; height: 60px; border-radius: 8px; overflow: hidden; }
+        .photo-preview-mini-item img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-preview-mini-del { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        /* ===== 카테고리 색상 ===== */
+        .cat-식사 { background: #fef3c7; color: #d97706; } .cat-관광 { background: #dbeafe; color: #2563eb; }
+        .cat-숙소 { background: #f3e8ff; color: #7c3aed; } .cat-교통 { background: #d1fae5; color: #059669; }
+        .cat-쇼핑 { background: #ffe4e6; color: #e11d48; } .cat-액티비티 { background: #ffedd5; color: #ea580c; }
+        .cat-기타 { background: #f1f5f9; color: #64748b; }
+        .dot-식사 { background: #f59e0b; } .dot-관광 { background: #3b82f6; } .dot-숙소 { background: #8b5cf6; }
+        .dot-교통 { background: #10b981; } .dot-쇼핑 { background: #f43f5e; } .dot-액티비티 { background: #f97316; } .dot-기타 { background: #94a3b8; }
+
+        /* ===== 반응형 ===== */
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+            .detail-info-grid { grid-template-columns: 1fr; }
+            .budget-cards { grid-template-columns: 1fr 1fr 1fr; }
+            .budget-card .b-value { font-size: 13px; }
+            .trip-header { flex-direction: column; text-align: center; }
+            .schedule-item-actions { opacity: 1; }
+            .lock-card { padding: 36px 24px; }
+        }
+        @media (max-width: 400px) {
+            .budget-cards { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== 🔐 비밀번호 잠금 화면 ===== -->
+<div id="lock-screen">
+    <div class="lock-card">
+        <span class="lock-icon">✈️</span>
+        <div class="lock-title">나의 여행 일정</div>
+        <div class="lock-subtitle">PIN 4자리를 입력하세요</div>
+
+        <div class="pin-dots" id="pin-dots">
+            <div class="pin-dot" id="dot-0"></div>
+            <div class="pin-dot" id="dot-1"></div>
+            <div class="pin-dot" id="dot-2"></div>
+            <div class="pin-dot" id="dot-3"></div>
+        </div>
+
+        <div class="lock-error" id="lock-error"></div>
+
+        <div class="keypad">
+            <button class="key-btn" onclick="pinInput('1')">1</button>
+            <button class="key-btn" onclick="pinInput('2')">2</button>
+            <button class="key-btn" onclick="pinInput('3')">3</button>
+            <button class="key-btn" onclick="pinInput('4')">4</button>
+            <button class="key-btn" onclick="pinInput('5')">5</button>
+            <button class="key-btn" onclick="pinInput('6')">6</button>
+            <button class="key-btn" onclick="pinInput('7')">7</button>
+            <button class="key-btn" onclick="pinInput('8')">8</button>
+            <button class="key-btn" onclick="pinInput('9')">9</button>
+            <button class="key-btn key-empty" disabled></button>
+            <button class="key-btn" onclick="pinInput('0')">0</button>
+            <button class="key-btn key-del" onclick="pinDelete()">⌫</button>
+        </div>
+
+        <div class="lock-hint" onclick="togglePwSetup()">🔧 처음 사용 시 / 비밀번호 변경</div>
+        <div class="pw-setup-box hidden" id="pw-setup-box">
+            <div style="color:rgba(255,255,255,0.6);font-size:12px;margin-bottom:8px;">새 PIN 4자리 설정</div>
+            <input type="password" id="new-pin-input" maxlength="4" placeholder="새 PIN 입력" inputmode="numeric">
+            <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="saveNewPin()">변경 저장</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 헤더 ===== -->
+<header>
+    <h1 onclick="goHome()">✈️ 여행 일정</h1>
+    <div class="breadcrumb" id="breadcrumb"></div>
+    <div class="header-actions">
+        <button class="lock-btn" onclick="lockApp()">🔒 잠금</button>
+    </div>
+</header>
+
+<!-- ===== 메인 페이지 ===== -->
+<div id="page-main">
+    <div class="page-title">
+        <h2>🗺️ 나의 여행 목록</h2>
+        <p>여행을 선택하거나 새 여행을 추가하세요</p>
+    </div>
+    <div class="trip-grid" id="trip-grid"></div>
+    <button class="add-trip-btn" onclick="openAddTripModal()">➕ 새 여행 추가하기</button>
+</div>
+
+<!-- ===== 여행 상세 ===== -->
+<div id="page-trip" class="hidden">
+    <div class="trip-header" id="trip-header"></div>
+
+    <!-- 예산 요약 -->
+    <div class="budget-summary">
+        <div class="budget-summary-title">💰 예산 현황</div>
+        <div class="budget-cards">
+            <div class="budget-card"><div class="b-label">총 예산</div><div class="b-value b-planned" id="total-budget">0원</div></div>
+            <div class="budget-card"><div class="b-label">실제 지출</div><div class="b-value b-actual" id="total-actual">0원</div></div>
+            <div class="budget-card"><div class="b-label">잔여/초과</div><div class="b-value" id="total-remain">0원</div></div>
+        </div>
+        <div class="budget-bar-wrap">
+            <div class="budget-bar-labels"><span>지출률</span><span id="budget-percent-label">0%</span></div>
+            <div class="budget-bar-bg"><div class="budget-bar-fill ok" id="budget-bar" style="width:0%"></div></div>
+        </div>
+        <div class="day-budget-toggle" onclick="toggleDayBudget()">📊 날짜별 상세 보기 ▼</div>
+        <div class="day-budget-list hidden" id="day-budget-list"></div>
+    </div>
+
+    <!-- 날짜 탭 -->
+    <div class="date-tabs-wrapper">
+        <div class="date-tabs" id="date-tabs"></div>
+    </div>
+
+    <!-- 지도 -->
+    <div class="map-section">
+        <div class="map-section-header">
+            <h3>🗺️ 오늘의 동선</h3>
+            <span id="map-status" style="font-size:11px;color:#a0aec0;"></span>
+        </div>
+        <div id="map-container">
+            <div class="map-placeholder" id="map-placeholder">
+                <div class="map-icon">🗺️</div>
+                <p>지도를 불러오는 중...</p>
+                <small>Google Maps API 키가 필요합니다</small>
+            </div>
+            <div id="google-map"></div>
+        </div>
+        <div class="map-api-notice" id="map-api-notice">
+            ⚠️ <span>실제 지도 사용을 위해 <b>Google Maps API 키</b>를 발급받아 코드 상단 script src의 <code>YOUR_API_KEY</code>를 교체하세요. <a href="https://console.cloud.google.com/" target="_blank" style="color:#744210">Google Cloud Console →</a></span>
+        </div>
+        <div class="map-places" id="map-places"></div>
+    </div>
+
+    <!-- 📸 사진 갤러리 -->
+    <div class="photo-section">
+        <div class="photo-section-header">
+            <h3>📸 여행 사진</h3>
+            <span id="photo-count" style="font-size:12px;color:#a0aec0;"></span>
+        </div>
+        <div class="photo-upload-area" id="trip-photo-drop" onclick="document.getElementById('trip-photo-input').click()">
+            <input type="file" id="trip-photo-input" multiple accept="image/*" onchange="handleTripPhotoUpload(event)">
+            <div class="upload-icon">📷</div>
+            <p>사진을 클릭하거나 드래그해서 업로드</p>
+            <small>JPG, PNG, HEIC 지원 · 여러 장 동시 업로드 가능</small>
+        </div>
+        <div class="photo-grid" id="trip-photo-grid"></div>
+    </div>
+
+    <!-- 일정 -->
+    <div class="schedule-section">
+        <div class="schedule-section-header">
+            <h3 id="selected-date-title">일정</h3>
+            <button class="btn btn-primary" onclick="openAddScheduleModal()" style="font-size:13px;padding:8px 14px;">+ 일정 추가</button>
+        </div>
+        <div class="day-budget-mini" id="day-budget-mini"></div>
+        <div class="schedule-list" id="schedule-list"></div>
+    </div>
+</div>
+
+<!-- ===== 상세 모달 ===== -->
+<div class="modal-overlay hidden" id="detail-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <div></div>
+            <button class="modal-close" onclick="closeModal('detail-modal')">✕</button>
+        </div>
+        <div class="modal-body" id="detail-modal-body"></div>
+    </div>
+</div>
+
+<!-- ===== 일정 추가/수정 모달 ===== -->
+<div class="modal-overlay hidden" id="schedule-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="schedule-modal-title" style="font-size:17px;color:#2d3748;">일정 추가</h3>
+            <button class="modal-close" onclick="closeModal('schedule-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>📌 일정 제목</label>
+                <input type="text" id="sch-title" placeholder="예: 경복궁 관람">
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>🕐 시작 시간</label><input type="time" id="sch-start"></div>
+                <div class="form-group"><label>🕑 종료 시간</label><input type="time" id="sch-end"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>🏷️ 카테고리</label>
+                    <select id="sch-category">
+                        <option>관광</option><option>식사</option><option>숙소</option>
+                        <option>교통</option><option>쇼핑</option><option>액티비티</option><option>기타</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>😊 이모지</label><input type="text" id="sch-emoji" placeholder="예: 🏯" maxlength="2"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>💰 예산 (원)</label><input type="number" id="sch-budget" placeholder="예: 15000"></div>
+                <div class="form-group"><label>💸 실제 지출 (원)</label><input type="number" id="sch-actual" placeholder="예: 13500" class="actual-cost-input"></div>
+            </div>
+            <div class="form-group">
+                <label>📍 장소</label>
+                <input type="text" id="sch-location" placeholder="예: 서울 종로구 경복궁">
+            </div>
+            <div class="form-group">
+                <label>📝 설명</label>
+                <textarea id="sch-desc" rows="2" placeholder="일정에 대한 설명을 입력하세요"></textarea>
+            </div>
+            <div class="form-group">
+                <label>🗒️ 메모</label>
+                <textarea id="sch-memo" rows="2" placeholder="준비물, 예약번호 등 메모"></textarea>
+            </div>
+            <!-- 📸 사진 업로드 -->
+            <div class="form-group">
+                <label>📸 사진 첨부</label>
+                <div class="photo-upload-mini" onclick="document.getElementById('sch-photo-input').click()">
+                    <input type="file" id="sch-photo-input" multiple accept="image/*" onchange="handleSchPhotoUpload(event)">
+                    <div style="font-size:24px;margin-bottom:6px;">📷</div>
+                    <p style="font-size:12px;color:#a0aec0;">클릭하여 사진 첨부</p>
+                </div>
+                <div class="photo-preview-mini" id="sch-photo-preview"></div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="closeModal('schedule-modal')">취소</button>
+                <button class="btn btn-primary" onclick="saveSchedule()">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 여행 추가/수정 모달 ===== -->
+<div class="modal-overlay hidden" id="trip-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="trip-modal-title" style="font-size:17px;color:#2d3748;">새 여행 추가</h3>
+            <button class="modal-close" onclick="closeModal('trip-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group"><label>✈️ 여행 제목</label><input type="text" id="trip-title" placeholder="예: 2024 도쿄 여행"></div>
+            <div class="form-row">
+                <div class="form-group"><label>📅 시작일</label><input type="date" id="trip-start"></div>
+                <div class="form-group"><label>📅 종료일</label><input type="date" id="trip-end"></div>
+            </div>
+            <div class="form-group"><label>🌍 목적지</label><input type="text" id="trip-dest" placeholder="예: 일본 도쿄"></div>
+            <div class="form-row">
+                <div class="form-group"><label>😊 대표 이모지</label><input type="text" id="trip-emoji" placeholder="예: 🗼" maxlength="2"></div>
+                <div class="form-group"><label>🎨 카드 색상</label><input type="color" id="trip-color" value="#667eea" style="height:42px;cursor:pointer;"></div>
+            </div>
+            <!-- 📸 대표 사진 -->
+            <div class="form-group">
+                <label>🖼️ 대표 사진 (선택)</label>
+                <div class="photo-upload-mini" onclick="document.getElementById('trip-cover-input').click()">
+                    <input type="file" id="trip-cover-input" accept="image/*" onchange="handleTripCoverUpload(event)">
+                    <div id="trip-cover-preview" style="font-size:24px;margin-bottom:6px;">🖼️</div>
+                    <p style="font-size:12px;color:#a0aec0;" id="trip-cover-label">클릭하여 대표 이미지 설정</p>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="closeModal('trip-modal')">취소</button>
+                <button class="btn btn-primary" onclick="saveTrip()">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 사진 라이트박스 ===== -->
+<div id="lightbox" class="hidden">
+    <button id="lightbox-close" onclick="closeLightbox()">✕</button>
+    <button id="lightbox-prev" onclick="lightboxNav(-1)">‹</button>
+    <img id="lightbox-img" src="" alt="">
+    <button id="lightbox-next" onclick="lightboxNav(1)">›</button>
+    <div class="lightbox-caption" id="lightbox-caption"></div>
+</div>
+
+<script>
+// =============================================
+//  🔐 비밀번호 시스템
+// =============================================
+const DEFAULT_PIN = '1234';
+let currentPin = '';
+let pinBuffer = '';
+
+function getStoredPin() {
+    return localStorage.getItem('travel_pin') || DEFAULT_PIN;
+}
+
+function pinInput(num) {
+    if (pinBuffer.length >= 4) return;
+    pinBuffer += num;
+    updatePinDots();
+    if (pinBuffer.length === 4) {
+        setTimeout(checkPin, 150);
+    }
+}
+
+function pinDelete() {
+    pinBuffer = pinBuffer.slice(0, -1);
+    updatePinDots();
+    document.getElementById('lock-error').textContent = '';
+}
+
+function updatePinDots() {
+    for (let i = 0; i < 4; i++) {
+        const dot = document.getElementById('dot-' + i);
+        dot.classList.toggle('filled', i < pinBuffer.length);
+    }
+}
+
+function checkPin() {
+    if (pinBuffer === getStoredPin()) {
+        const ls = document.getElementById('lock-screen');
+        ls.classList.add('unlocking');
+        setTimeout(() => ls.classList.add('hidden'), 500);
+    } else {
+        document.getElementById('lock-error').textContent = '❌ PIN이 틀렸습니다. 다시 시도하세요.';
+        pinBuffer = '';
+        updatePinDots();
+        // 에러 애니메이션 재시작
+        const err = document.getElementById('lock-error');
+        err.style.animation = 'none';
+        err.offsetHeight;
+        err.style.animation = '';
+    }
+}
+
+function lockApp() {
+    const ls = document.getElementById('lock-screen');
+    ls.classList.remove('hidden', 'unlocking');
+    pinBuffer = '';
+    updatePinDots();
+    document.getElementById('lock-error').textContent = '';
+    document.getElementById('pw-setup-box').classList.add('hidden');
+}
+
+function togglePwSetup() {
+    document.getElementById('pw-setup-box').classList.toggle('hidden');
+}
+
+function saveNewPin() {
+    const input = document.getElementById('new-pin-input').value.trim();
+    if (!/^\d{4}$/.test(input)) {
+        alert('숫자 4자리를 입력해주세요.');
+        return;
+    }
+    localStorage.setItem('travel_pin', input);
+    document.getElementById('new-pin-input').value = '';
+    document.getElementById('pw-setup-box').classList.add('hidden');
+    document.getElementById('lock-error').textContent = '✅ PIN이 변경되었습니다!';
+    document.getElementById('lock-error').style.color = '#68d391';
+    setTimeout(() => {
+        document.getElementById('lock-error').textContent = '';
+        document.getElementById('lock-error').style.color = '#fc8181';
+    }, 2000);
+}
+
+// 키보드 지원
+document.addEventListener('keydown', (e) => {
+    const ls = document.getElementById('lock-screen');
+    if (!ls.classList.contains('hidden')) {
+        if (e.key >= '0' && e.key <= '9') pinInput(e.key);
+        if (e.key === 'Backspace') pinDelete();
+        if (e.key === 'Enter' && pinBuffer.length === 4) checkPin();
+    }
+});
+
+// 드래그 앤 드롭 (잠금화면)
+const dropArea = document.getElementById('trip-photo-drop');
+if (dropArea) {
+    dropArea.addEventListener('dragover', (e) => { e.preventDefault(); dropArea.classList.add('dragover'); });
+    dropArea.addEventListener('dragleave', () => dropArea.classList.remove('dragover'));
+    dropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropArea.classList.remove('dragover');
+        handleTripPhotoFiles(e.dataTransfer.files);
+    });
+}
+
+// =============================================
+//  📸 사진 시스템
+// =============================================
+let tripPhotos = {}; // { tripId: [{ id, dataUrl, name, date }] }
+let schPhotosTemp = []; // 일정 추가 시 임시
+let lightboxPhotos = [];
+let lightboxIdx = 0;
+
+function handleTripPhotoUpload(e) {
+    handleTripPhotoFiles(e.target.files);
+    e.target.value = '';
+}
+
+function handleTripPhotoFiles(files) {
+    if (!currentTripId) return;
+    if (!tripPhotos[currentTripId]) tripPhotos[currentTripId] = [];
+    Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            tripPhotos[currentTripId].push({ id: Date.now() + Math.random(), dataUrl: ev.target.result, name: file.name, date: new Date().toLocaleDateString('ko-KR') });
+            renderTripPhotos();
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function renderTripPhotos() {
+    if (!currentTripId) return;
+    const photos = tripPhotos[currentTripId] || [];
+    const grid = document.getElementById('trip-photo-grid');
+    const countEl = document.getElementById('photo-count');
+    countEl.textContent = photos.length > 0 ? `${photos.length}장` : '';
+    if (!grid) return;
+    grid.innerHTML = photos.map((p, i) => `
+        <div class="photo-item" onclick="openLightbox(${i}, 'trip')">
+            <img src="${p.dataUrl}" alt="${p.name}">
+            <button class="photo-item-del" onclick="event.stopPropagation();deleteTripPhoto(${i})">✕</button>
+            <div class="photo-caption">${p.name}</div>
+        </div>
+    `).join('');
+}
+
+function deleteTripPhoto(idx) {
+    if (!currentTripId) return;
+    tripPhotos[currentTripId].splice(idx, 1);
+    renderTripPhotos();
+}
+
+// 일정 모달 사진
+function handleSchPhotoUpload(e) {
+    Array.from(e.target.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            schPhotosTemp.push({ id: Date.now() + Math.random(), dataUrl: ev.target.result, name: file.name });
+            renderSchPhotoPreview();
+        };
+        reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+}
+
+function renderSchPhotoPreview() {
+    const container = document.getElementById('sch-photo-preview');
+    if (!container) return;
+    container.innerHTML = schPhotosTemp.map((p, i) => `
+        <div class="photo-preview-mini-item">
+            <img src="${p.dataUrl}" alt="${p.name}">
+            <button class="photo-preview-mini-del" onclick="schPhotosTemp.splice(${i},1);renderSchPhotoPreview()">✕</button>
+        </div>
+    `).join('');
+}
+
+// 여행 대표 사진
+let tripCoverTemp = null;
+function handleTripCoverUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        tripCoverTemp = ev.target.result;
+        const preview = document.getElementById('trip-cover-preview');
+        preview.innerHTML = `<img src="${tripCoverTemp}" style="width:100%;height:80px;object-fit:cover;border-radius:8px;">`;
+        document.getElementById('trip-cover-label').textContent = file.name;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+}
+
+// 라이트박스
+function openLightbox(idx, source) {
+    if (source === 'trip' && currentTripId) {
+        lightboxPhotos = tripPhotos[currentTripId] || [];
+    }
+    lightboxIdx = idx;
+    renderLightbox();
+    document.getElementById('lightbox').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function renderLightbox() {
+    const p = lightboxPhotos[lightboxIdx];
+    if (!p) return;
+    document.getElementById('lightbox-img').src = p.dataUrl;
+    document.getElementById('lightbox-caption').textContent = `${p.name} · ${p.date || ''} (${lightboxIdx + 1}/${lightboxPhotos.length})`;
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function lightboxNav(dir) {
+    lightboxIdx = (lightboxIdx + dir + lightboxPhotos.length) % lightboxPhotos.length;
+    renderLightbox();
+}
+
+document.addEventListener('keydown', (e) => {
+    if (!document.getElementById('lightbox').classList.contains('hidden')) {
+        if (e.key === 'ArrowLeft') lightboxNav(-1);
+        if (e.key === 'ArrowRight') lightboxNav(1);
+        if (e.key === 'Escape') closeLightbox();
+    }
+});
+
+// =============================================
+//  데이터
+// =============================================
+let trips = [
+    {
+        id: 1,
+        title: "2024 도쿄 여행 🗼",
+        destination: "일본 도쿄",
+        startDate: "2024-03-10",
+        endDate: "2024-03-15",
+        emoji: "🗼",
+        color: "#ff6b6b",
+        cover: null,
+        schedules: {
+            "2024-03-10": [
+                { id: 101, title: "인천공항 출발", time: "09:00", endTime: "12:00", category: "교통", location: "인천국제공항", emoji: "✈️", budget: 0, actual: 0, desc: "대한항공 KE701편으로 출발", memo: "여권 확인 필수!", photos: [] },
+                { id: 102, title: "나리타 공항 도착", time: "13:30", endTime: "15:00", category: "교통", location: "나리타 국제공항", emoji: "🛬", budget: 0, actual: 0, desc: "입국 심사 후 리무진 버스 이동", memo: "IC카드 구매하기", photos: [] },
+                { id: 103, title: "신주쿠 호텔 체크인", time: "16:00", endTime: "17:00", category: "숙소", location: "신주쿠 그랜드 호텔", emoji: "🏨", budget: 150000, actual: 148000, desc: "신주쿠 중심부 호텔", memo: "예약번호 TK2024031001", photos: [] },
+                { id: 104, title: "오코노미야키 저녁", time: "19:00", endTime: "21:00", category: "식사", location: "신주쿠 맛집거리", emoji: "🥘", budget: 25000, actual: 28000, desc: "신주쿠 유명 오코노미야키 레스토랑", memo: "", photos: [] }
+            ],
+            "2024-03-11": [
+                { id: 201, title: "아사쿠사 센소지", time: "09:00", endTime: "11:00", category: "관광", location: "도쿄 아사쿠사 센소지", emoji: "⛩️", budget: 0, actual: 0, desc: "도쿄 가장 오래된 절 방문", memo: "아침 일찍 가야 덜 붐빔", photos: [] },
+                { id: 202, title: "스카이트리 전망대", time: "11:30", endTime: "13:30", category: "관광", location: "도쿄 스카이트리", emoji: "🗼", budget: 20000, actual: 20000, desc: "634m 높이 전망대", memo: "", photos: [] }
+            ]
+        }
+    }
+];
+
+let currentTripId = null;
+let currentDate = null;
+let editingScheduleId = null;
+let editingTripId = null;
+let googleMap = null;
+
+// =============================================
+//  유틸
+// =============================================
+function fmt(n) { return n ? Number(n).toLocaleString('ko-KR') + '원' : '0원'; }
+function getDates(start, end) {
+    const dates = []; let d = new Date(start);
+    while (d <= new Date(end)) { dates.push(d.toISOString().split('T')[0]); d.setDate(d.getDate()+1); }
+    return dates;
+}
+function getDayOfWeek(dateStr) { return ['일','월','화','수','목','금','토'][new Date(dateStr).getDay()]; }
+function getTripStatus(trip) {
+    const today = new Date().toISOString().split('T')[0];
+    if (today < trip.startDate) return { label: '예정', cls: 'badge-upcoming' };
+    if (today > trip.endDate) return { label: '완료', cls: 'badge-past' };
+    return { label: '진행중', cls: 'badge-current' };
+}
+function calcTripBudget(trip) {
+    let planned = 0, actual = 0;
+    Object.values(trip.schedules || {}).forEach(day => day.forEach(s => { planned += s.budget||0; actual += s.actual||0; }));
+    return { planned, actual, remain: planned - actual };
+}
+
+// =============================================
+//  메인 페이지
+// =============================================
+function renderMain() {
+    document.getElementById('page-main').classList.remove('hidden');
+    document.getElementById('page-trip').classList.add('hidden');
+    document.getElementById('breadcrumb').innerHTML = '';
+    currentTripId = null;
+    const grid = document.getElementById('trip-grid');
+    grid.innerHTML = trips.map(trip => {
+        const st = getTripStatus(trip);
+        const b = calcTripBudget(trip);
+        const pct = b.planned > 0 ? Math.min(Math.round(b.actual/b.planned*100), 100) : 0;
+        const barColor = b.actual > b.planned ? '#e53e3e' : '#4f86f7';
+        const coverImg = trip.cover ? `<img src="${trip.cover}" alt="">` : '';
+        return `
+        <div class="trip-card" onclick="openTrip(${trip.id})">
+            <div class="trip-card-thumb" style="background:${trip.color}22;">
+                ${coverImg}
+                <span class="thumb-emoji">${trip.emoji||'✈️'}</span>
+                <div class="trip-card-badge ${st.cls}">${st.label}</div>
+            </div>
+            <div class="trip-card-body">
+                <h3>${trip.title}</h3>
+                <p>📍 ${trip.destination}</p>
+                <p>📅 ${trip.startDate} ~ ${trip.endDate}</p>
+                <div class="trip-budget-mini">
+                    <div class="trip-budget-mini-row"><span>예산</span><span>${fmt(b.planned)}</span></div>
+                    <div class="trip-budget-mini-row"><span>지출</span><span>${fmt(b.actual)}</span></div>
+                    <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${pct}%;background:${barColor};"></div></div>
+                </div>
+            </div>
+            <div class="trip-card-actions" onclick="event.stopPropagation()">
+                <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="openEditTripModal(${trip.id})">✏️ 수정</button>
+                <button class="btn btn-danger" style="font-size:12px;padding:6px 12px;" onclick="deleteTrip(${trip.id})">🗑️ 삭제</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function goHome() { renderMain(); }
+
+// =============================================
+//  여행 상세
+// =============================================
+function openTrip(tripId) {
+    currentTripId = tripId;
+    const trip = trips.find(t => t.id === tripId);
+    if (!trip) return;
+    document.getElementById('page-main').classList.add('hidden');
+    document.getElementById('page-trip').classList.remove('hidden');
+    document.getElementById('breadcrumb').innerHTML = `<span onclick="goHome()">🏠 홈</span> › <span>${trip.title}</span>`;
+
+    // 헤더
+    document.getElementById('trip-header').innerHTML = `
+        <div class="trip-header-emoji">${trip.emoji||'✈️'}</div>
+        <div class="trip-header-info">
+            <h2>${trip.title}</h2>
+            <p>📍 ${trip.destination} | 📅 ${trip.startDate} ~ ${trip.endDate}</p>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+            <button class="btn btn-secondary" style="font-size:13px;" onclick="openEditTripModal(${trip.id})">✏️ 수정</button>
+        </div>`;
+
+    renderBudgetSummary(trip);
+    renderDateTabs(trip);
+    renderTripPhotos();
+
+    const dates = getDates(trip.startDate, trip.endDate);
+    const today = new Date().toISOString().split('T')[0];
+    currentDate = dates.includes(today) ? today : dates[0];
+    setActiveTab(currentDate);
+    renderSchedule(trip, currentDate);
+}
+
+function renderBudgetSummary(trip) {
+    const b = calcTripBudget(trip);
+    document.getElementById('total-budget').textContent = fmt(b.planned);
+    document.getElementById('total-actual').textContent = fmt(b.actual);
+    const remainEl = document.getElementById('total-remain');
+    remainEl.textContent = (b.remain >= 0 ? '' : '-') + fmt(Math.abs(b.remain));
+    remainEl.className = 'b-value ' + (b.remain >= 0 ? 'b-remain' : 'b-over');
+    const pct = b.planned > 0 ? Math.min(b.actual/b.planned*100, 100) : 0;
+    const bar = document.getElementById('budget-bar');
+    bar.style.width = pct + '%';
+    bar.className = 'budget-bar-fill ' + (b.actual > b.planned ? 'over' : 'ok');
+    document.getElementById('budget-percent-label').textContent = Math.round(b.planned > 0 ? b.actual/b.planned*100 : 0) + '%';
+
+    // 날짜별 예산 목록
+    const dates = getDates(trip.startDate, trip.endDate);
+    document.getElementById('day-budget-list').innerHTML = dates.map(d => {
+        const items = trip.schedules[d] || [];
+        const dp = items.reduce((s,i)=>s+(i.budget||0),0);
+        const da = items.reduce((s,i)=>s+(i.actual||0),0);
+        const dpct = dp > 0 ? Math.min(da/dp*100,100) : 0;
+        return `<div class="day-budget-row">
+            <span class="day-label">Day${dates.indexOf(d)+1}</span>
+            <div class="day-bar-bg"><div class="day-bar-fill" style="width:${dpct}%;background:${da>dp?'#e53e3e':'#4f86f7'};"></div></div>
+            <span class="day-amounts">${fmt(da)} / ${fmt(dp)}</span>
+        </div>`;
+    }).join('');
+}
+
+function toggleDayBudget() {
+    document.getElementById('day-budget-list').classList.toggle('hidden');
+    document.querySelector('.day-budget-toggle').textContent = document.getElementById('day-budget-list').classList.contains('hidden')
+        ? '📊 날짜별 상세 보기 ▼' : '📊 날짜별 상세 접기 ▲';
+}
+
+function renderDateTabs(trip) {
+    const dates = getDates(trip.startDate, trip.endDate);
+    document.getElementById('date-tabs').innerHTML = dates.map((d, i) => {
+        const hasItems = (trip.schedules[d]||[]).length > 0;
+        return `<div class="date-tab" id="tab-${d}" onclick="selectDate('${d}')">
+            <div class="day-label">Day ${i+1}</div>
+            <div class="day-num">${d.split('-')[2]}</div>
+            <div class="day-of-week">${getDayOfWeek(d)}</div>
+            ${hasItems ? '<div class="day-dot"></div>' : ''}
+        </div>`;
+    }).join('');
+}
+
+function setActiveTab(date) {
+    document.querySelectorAll('.date-tab').forEach(t => t.classList.remove('active'));
+    const tab = document.getElementById('tab-' + date);
+    if (tab) { tab.classList.add('active'); tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }
+}
+
+function selectDate(date) {
+    currentDate = date;
+    setActiveTab(date);
+    const trip = trips.find(t => t.id === currentTripId);
+    renderSchedule(trip, date);
+}
+
+function renderSchedule(trip, date) {
+    const dates = getDates(trip.startDate, trip.endDate);
+    const dayNum = dates.indexOf(date) + 1;
+    document.getElementById('selected-date-title').textContent = `Day ${dayNum} · ${date} (${getDayOfWeek(date)})`;
+
+    const items = (trip.schedules[date] || []).sort((a,b) => a.time.localeCompare(b.time));
+
+    // 일별 예산 미니
+    const dp = items.reduce((s,i)=>s+(i.budget||0),0);
+    const da = items.reduce((s,i)=>s+(i.actual||0),0);
+    const diff = dp - da;
+    document.getElementById('day-budget-mini').innerHTML = dp > 0 ? `
+        <span class="dbi-plan">예산 ${fmt(dp)}</span>
+        <span class="dbi-actual">지출 ${fmt(da)}</span>
+        <span class="${diff >= 0 ? 'dbi-diff-ok' : 'dbi-diff-over'}">${diff >= 0 ? '잔여 ' : '초과 '}${fmt(Math.abs(diff))}</span>
+    ` : '';
+
+    // 지도 장소
+    const places = items.filter(i => i.location);
+    document.getElementById('map-places').innerHTML = places.map(i => `
+        <div class="map-place-chip">${i.emoji||'📍'} ${i.title}</div>
+    `).join('');
+
+    // 일정 목록
+    const list = document.getElementById('schedule-list');
+    if (items.length === 0) {
+        list.innerHTML = `<div class="empty-schedule"><div class="empty-icon">🌟</div><p>이 날의 일정이 없습니다</p><p style="font-size:12px;margin-top:6px;">+ 일정 추가 버튼을 눌러 추가하세요</p></div>`;
+        return;
+    }
+    list.innerHTML = items.map(item => {
+        const thumbHtml = item.photos && item.photos.length > 0
+            ? `<img class="schedule-thumb" src="${item.photos[0].dataUrl}" alt="">`
+            : '';
+        return `
+        <div class="schedule-item" onclick="openDetail(${item.id}, '${date}')">
+            <div class="schedule-time">${item.time}${item.endTime ? '<br><span style="color:#a0aec0;font-weight:normal;">'+item.endTime+'</span>' : ''}</div>
+            <div class="schedule-dot dot-${item.category}"></div>
+            <div class="schedule-content">
+                <h4>${item.emoji||''} ${item.title}</h4>
+                <p>${item.location ? '📍 '+item.location : ''}</p>
+            </div>
+            ${thumbHtml}
+            <div class="schedule-budget-info">
+                ${item.budget ? `<span class="sbi-plan">예산 ${fmt(item.budget)}</span>` : ''}
+                ${item.actual ? `<span class="sbi-actual">지출 ${fmt(item.actual)}</span>` : ''}
+                <span class="schedule-category cat-${item.category}">${item.category}</span>
+            </div>
+            <div class="schedule-item-actions" onclick="event.stopPropagation()">
+                <button class="icon-btn" onclick="openEditScheduleModal(${item.id},'${date}')">✏️</button>
+                <button class="icon-btn" onclick="deleteSchedule(${item.id},'${date}')">🗑️</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// =============================================
+//  상세 모달
+// =============================================
+function openDetail(scheduleId, date) {
+    const trip = trips.find(t => t.id === currentTripId);
+    const item = (trip.schedules[date]||[]).find(s => s.id === scheduleId);
+    if (!item) return;
+    const pct = item.budget > 0 ? Math.min(item.actual/item.budget*100,100) : 0;
+    const diff = (item.budget||0) - (item.actual||0);
+
+    // 사진 그리드
+    const photos = item.photos || [];
+    const photoHtml = photos.length > 0 ? `
+        <div class="detail-photos">
+            <div class="detail-photos-title">📸 사진</div>
+            <div class="detail-photo-grid">
+                ${photos.map((p,i) => `<img src="${p.dataUrl}" onclick="openDetailPhotoLightbox(${scheduleId},'${date}',${i})">`).join('')}
+            </div>
+        </div>` : '';
+
+    document.getElementById('detail-modal-body').innerHTML = `
+        <span class="detail-emoji">${item.emoji||'📌'}</span>
+        <div class="detail-title">${item.title}</div>
+        <div class="detail-meta">
+            <span class="detail-tag cat-${item.category}">${item.category}</span>
+            <span class="detail-tag" style="background:#f0f4ff;color:#4f86f7;">⏰ ${item.time}${item.endTime?' ~ '+item.endTime:''}</span>
+            ${item.location ? `<span class="detail-tag" style="background:#f0fff4;color:#2f855a;">📍 ${item.location}</span>` : ''}
+        </div>
+        ${photoHtml}
+        ${(item.budget||item.actual) ? `
+        <div class="detail-budget-box">
+            <div class="db-title">💰 예산 현황</div>
+            <div class="detail-budget-row"><span class="db-label">예산</span><span class="db-val db-val-plan">${fmt(item.budget)}</span></div>
+            <div class="detail-budget-row"><span class="db-label">실제 지출</span><span class="db-val db-val-actual">${fmt(item.actual)}</span></div>
+            <div class="detail-budget-row"><span class="db-label">${diff>=0?'잔여':'초과'}</span><span class="db-val ${diff>=0?'db-val-ok':'db-val-over'}">${diff>=0?'':'-'}${fmt(Math.abs(diff))}</span></div>
+            ${item.budget ? `<div class="detail-budget-bar"><div class="budget-bar-bg"><div class="budget-bar-fill ${item.actual>item.budget?'over':'ok'}" style="width:${pct}%"></div></div></div>` : ''}
+        </div>` : ''}
+        ${item.desc ? `<div class="detail-desc">${item.desc}</div>` : ''}
+        ${item.memo ? `<div class="detail-memo"><div class="label">🗒️ 메모</div><textarea readonly>${item.memo}</textarea></div>` : ''}
+        <div style="display:flex;gap:8px;margin-top:14px;">
+            <button class="btn btn-secondary" style="flex:1;" onclick="openEditScheduleModal(${item.id},'${date}');closeModal('detail-modal')">✏️ 수정</button>
+            <button class="btn btn-danger" style="flex:1;" onclick="deleteSchedule(${item.id},'${date}');closeModal('detail-modal')">🗑️ 삭제</button>
+        </div>`;
+    document.getElementById('detail-modal').classList.remove('hidden');
+}
+
+function openDetailPhotoLightbox(scheduleId, date, idx) {
+    const trip = trips.find(t => t.id === currentTripId);
+    const item = (trip.schedules[date]||[]).find(s => s.id === scheduleId);
+    if (!item) return;
+    lightboxPhotos = item.photos || [];
+    openLightbox(idx, 'custom');
+}
+
+// =============================================
+//  일정 CRUD
+// =============================================
+function openAddScheduleModal() {
+    editingScheduleId = null;
+    schPhotosTemp = [];
+    document.getElementById('schedule-modal-title').textContent = '일정 추가';
+    ['sch-title','sch-start','sch-end','sch-location','sch-desc','sch-memo'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('sch-emoji').value = '';
+    document.getElementById('sch-category').value = '관광';
+    document.getElementById('sch-budget').value = '';
+    document.getElementById('sch-actual').value = '';
+    document.getElementById('sch-photo-preview').innerHTML = '';
+    document.getElementById('schedule-modal').classList.remove('hidden');
+}
+
+function openEditScheduleModal(scheduleId, date) {
+    const trip = trips.find(t => t.id === currentTripId);
+    const item = (trip.schedules[date]||[]).find(s => s.id === scheduleId);
+    if (!item) return;
+    editingScheduleId = scheduleId;
+    schPhotosTemp = [...(item.photos||[])];
+    document.getElementById('schedule-modal-title').textContent = '일정 수정';
+    document.getElementById('sch-title').value = item.title||'';
+    document.getElementById('sch-start').value = item.time||'';
+    document.getElementById('sch-end').value = item.endTime||'';
+    document.getElementById('sch-category').value = item.category||'관광';
+    document.getElementById('sch-emoji').value = item.emoji||'';
+    document.getElementById('sch-budget').value = item.budget||'';
+    document.getElementById('sch-actual').value = item.actual||'';
+    document.getElementById('sch-location').value = item.location||'';
+    document.getElementById('sch-desc').value = item.desc||'';
+    document.getElementById('sch-memo').value = item.memo||'';
+    renderSchPhotoPreview();
+    document.getElementById('schedule-modal').classList.remove('hidden');
+}
+
+function saveSchedule() {
+    const title = document.getElementById('sch-title').value.trim();
+    if (!title) { alert('일정 제목을 입력하세요.'); return; }
+    const trip = trips.find(t => t.id === currentTripId);
+    if (!trip.schedules[currentDate]) trip.schedules[currentDate] = [];
+    if (editingScheduleId) {
+        const idx = trip.schedules[currentDate].findIndex(s => s.id === editingScheduleId);
+        if (idx > -1) trip.schedules[currentDate][idx] = { ...trip.schedules[currentDate][idx], title, time: document.getElementById('sch-start').value, endTime: document.getElementById('sch-end').value, category: document.getElementById('sch-category').value, emoji: document.getElementById('sch-emoji').value, budget: Number(document.getElementById('sch-budget').value)||0, actual: Number(document.getElementById('sch-actual').value)||0, location: document.getElementById('sch-location').value, desc: document.getElementById('sch-desc').value, memo: document.getElementById('sch-memo').value, photos: schPhotosTemp };
+    } else {
+        trip.schedules[currentDate].push({ id: Date.now(), title, time: document.getElementById('sch-start').value, endTime: document.getElementById('sch-end').value, category: document.getElementById('sch-category').value, emoji: document.getElementById('sch-emoji').value, budget: Number(document.getElementById('sch-budget').value)||0, actual: Number(document.getElementById('sch-actual').value)||0, location: document.getElementById('sch-location').value, desc: document.getElementById('sch-desc').value, memo: document.getElementById('sch-memo').value, photos: schPhotosTemp });
+    }
+    closeModal('schedule-modal');
+    schPhotosTemp = [];
+    renderBudgetSummary(trip);
+    renderDateTabs(trip);
+    renderSchedule(trip, currentDate);
+}
+
+function deleteSchedule(scheduleId, date) {
+    if (!confirm('이 일정을 삭제하시겠습니까?')) return;
+    const trip = trips.find(t => t.id === currentTripId);
+    trip.schedules[date] = (trip.schedules[date]||[]).filter(s => s.id !== scheduleId);
+    renderBudgetSummary(trip);
+    renderDateTabs(trip);
+    renderSchedule(trip, date);
+}
+
+// =============================================
+//  여행 CRUD
+// =============================================
+function openAddTripModal() {
+    editingTripId = null;
+    tripCoverTemp = null;
+    document.getElementById('trip-modal-title').textContent = '새 여행 추가';
+    ['trip-title','trip-dest'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('trip-start').value = '';
+    document.getElementById('trip-end').value = '';
+    document.getElementById('trip-emoji').value = '';
+    document.getElementById('trip-color').value = '#667eea';
+    document.getElementById('trip-cover-preview').innerHTML = '🖼️';
+    document.getElementById('trip-cover-label').textContent = '클릭하여 대표 이미지 설정';
+    document.getElementById('trip-modal').classList.remove('hidden');
+}
+
+function openEditTripModal(tripId) {
+    const trip = trips.find(t => t.id === tripId);
+    if (!trip) return;
+    editingTripId = tripId;
+    tripCoverTemp = trip.cover || null;
+    document.getElementById('trip-modal-title').textContent = '여행 수정';
+    document.getElementById('trip-title').value = trip.title;
+    document.getElementById('trip-start').value = trip.startDate;
+    document.getElementById('trip-end').value = trip.endDate;
+    document.getElementById('trip-dest').value = trip.destination;
+    document.getElementById('trip-emoji').value = trip.emoji||'';
+    document.getElementById('trip-color').value = trip.color||'#667eea';
+    const preview = document.getElementById('trip-cover-preview');
+    if (trip.cover) {
+        preview.innerHTML = `<img src="${trip.cover}" style="width:100%;height:80px;object-fit:cover;border-radius:8px;">`;
+        document.getElementById('trip-cover-label').textContent = '대표 이미지 설정됨';
+    } else {
+        preview.innerHTML = '🖼️';
+        document.getElementById('trip-cover-label').textContent = '클릭하여 대표 이미지 설정';
+    }
+    document.getElementById('trip-modal').classList.remove('hidden');
+}
+
+function saveTrip() {
+    const title = document.getElementById('trip-title').value.trim();
+    const start = document.getElementById('trip-start').value;
+    const end = document.getElementById('trip-end').value;
+    if (!title || !start || !end) { alert('제목과 날짜를 입력하세요.'); return; }
+    if (editingTripId) {
+        const trip = trips.find(t => t.id === editingTripId);
+        Object.assign(trip, { title, startDate: start, endDate: end, destination: document.getElementById('trip-dest').value, emoji: document.getElementById('trip-emoji').value||'✈️', color: document.getElementById('trip-color').value, cover: tripCoverTemp });
+    } else {
+        trips.push({ id: Date.now(), title, startDate: start, endDate: end, destination: document.getElementById('trip-dest').value, emoji: document.getElementById('trip-emoji').value||'✈️', color: document.getElementById('trip-color').value, cover: tripCoverTemp, schedules: {} });
+    }
+    closeModal('trip-modal');
+    tripCoverTemp = null;
+    renderMain();
+}
+
+function deleteTrip(tripId) {
+    if (!confirm('이 여행을 삭제하시겠습니까?')) return;
+    trips = trips.filter(t => t.id !== tripId);
+    renderMain();
+}
+
+// =============================================
+//  모달
+// =============================================
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.add('hidden'); });
+});
+
+// =============================================
+//  초기화
+// =============================================
+renderMain();
+</script>
+</body>
+</html>
