@@ -1719,16 +1719,6 @@
 
         ${item.memo ? `<div class="detail-memo"><div class="label">🗒️ 메모</div><textarea readonly>${item.memo}</textarea></div>` : ''}
 
- 
-
-        <div style="display:flex;gap:8px;margin-top:14px;">
-
-          <button class="btn btn-secondary" style="flex:1;" onclick="openEditScheduleModal(${item.id},'${date}');closeModal('detail-modal')">✏️ 수정</button>
-
-          <button class="btn btn-danger" style="flex:1;" onclick="deleteSchedule(${item.id},'${date}');closeModal('detail-modal')">🗑️ 삭제</button>
-
-        </div>
-
       `;
 
       document.getElementById('detail-modal').classList.remove('hidden');
