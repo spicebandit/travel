@@ -920,8 +920,9 @@
 
   </div>
 
- 
 
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
 
     // =============================================
@@ -930,21 +931,23 @@
 
     // =============================================
 
-    const API_URL = 'https://soft-frost-0eb3.unhaine.workers.dev';
+    const SUPABASE_URL = 'https://rtueiiwaulmpazrdzwld.supabase.co';
 
-    const API_SECRET = '9532';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0dWVpaXdhdWxtcGF6cmR6d2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjI2MTQsImV4cCI6MjA5NjU5ODYxNH0.Ki8sigtxs4OTMJNFEaBA8b2ldRc3nlqxN4Y6FwJUeQw';
 
- 
+    const SUPABASE_ROW_ID = 'family';
+
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
 
     async function loadFromServer() {
 
-      const res = await fetch(`${API_URL}?action=load`, { cache: 'no-store' });
+      const { data, error } = await sb.from('trips').select('data').eq('id', SUPABASE_ROW_ID).maybeSingle();
 
-      const json = await res.json();
+      if (error) throw error;
 
-      if (!json.ok) throw new Error(json.message || 'Load failed');
-
-      trips = Array.isArray(json.trips) ? json.trips : [];
+      trips = Array.isArray(data && data.data) ? data.data : [];
 
     }
 
@@ -952,24 +955,9 @@
 
     async function saveToServer() {
 
-      const form = new URLSearchParams();
-      form.set('action', 'save');
-      form.set('secret', API_SECRET);
-      form.set('trips', JSON.stringify(trips));
-      
-      const res = await fetch(API_URL, {
+      const { error } = await sb.from('trips').upsert({ id: SUPABASE_ROW_ID, data: trips });
 
-        method: 'POST',
-
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-
-        body: form.toString() 
-
-      });
-
-      const json = await res.json();
-
-      if (!json.ok) throw new Error(json.message || 'Save failed');
+      if (error) throw error;
 
     }
 
@@ -981,7 +969,7 @@
 
     // =============================================
 
-    const DEFAULT_PIN = '1234';
+    const DEFAULT_PIN = '9532';
 
     let pinBuffer = '';
 
