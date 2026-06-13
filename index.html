@@ -484,6 +484,16 @@
 
     .detail-memo textarea { width: 100%; border: none; outline: none; font-size: 13px; color: #4a5568; resize: none; background: transparent; font-family: inherit; line-height: 1.6; }
 
+    /* ===== 📷 사진 기능 ===== */
+    .trip-card-cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+    .trip-cover { flex: 1 0 100%; width: 100%; height: 170px; object-fit: cover; border-radius: 12px; margin-bottom: 4px; }
+    .detail-photo-block { margin: 14px 0 4px; }
+    .detail-photo { width: 100%; max-height: 320px; object-fit: cover; border-radius: 12px; display: block; }
+    .detail-photo-empty { background: #f7fafc; border: 1px dashed #cbd5e0; border-radius: 12px; padding: 28px 12px; text-align: center; color: #a0aec0; font-size: 13px; }
+    .detail-photo-actions { display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+    .app-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.82); color: #fff; padding: 11px 20px; border-radius: 22px; font-size: 13px; z-index: 99999; opacity: 0; transition: opacity 0.2s; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+    .app-toast.show { opacity: 1; }
+
  
 
     /* ===== 폼 ===== */
@@ -964,6 +974,123 @@
  
 
     // =============================================
+    //  📷 사진 기능 (Supabase Storage)
+    // =============================================
+    const PHOTO_BUCKET = 'travel-photos';
+
+    // 간단 토스트
+    let _toastEl = null;
+    function showToast(msg) {
+      if (!_toastEl) {
+        _toastEl = document.createElement('div');
+        _toastEl.className = 'app-toast';
+        document.body.appendChild(_toastEl);
+      }
+      _toastEl.textContent = msg;
+      _toastEl.classList.add('show');
+    }
+    function hideToast() { if (_toastEl) _toastEl.classList.remove('show'); }
+
+    // 브라우저에서 이미지 리사이즈/압축 → JPEG Blob
+    function compressImage(file, maxSize, quality) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          let w = img.width, h = img.height;
+          if (w >= h && w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; }
+          else if (h > w && h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('이미지 압축 실패')), 'image/jpeg', quality);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지를 읽을 수 없습니다')); };
+        img.src = url;
+      });
+    }
+
+    // 압축 → 업로드 → 공개 URL(캐시버스터 포함) 반환
+    async function uploadPhoto(file, path) {
+      const blob = await compressImage(file, 1280, 0.8);
+      const { error } = await sb.storage.from(PHOTO_BUCKET).upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+      if (error) throw error;
+      const { data } = sb.storage.from(PHOTO_BUCKET).getPublicUrl(path);
+      return data.publicUrl + '?t=' + Date.now();
+    }
+
+    // 파일 선택창 띄우고 업로드 후 onDone(url) 호출
+    function pickAndUploadPhoto(path, onDone) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        showToast('📤 사진 업로드 중...');
+        try {
+          const url = await uploadPhoto(file, path);
+          await onDone(url);
+          showToast('✅ 업로드 완료');
+          setTimeout(hideToast, 1000);
+        } catch (e) {
+          hideToast();
+          alert('사진 업로드 실패: ' + (e.message || e));
+        }
+      };
+      input.click();
+    }
+
+    async function removeFromStorage(path) {
+      try { await sb.storage.from(PHOTO_BUCKET).remove([path]); } catch (e) { /* 무시 */ }
+    }
+
+    // ----- 일정 사진 -----
+    function setItemPhoto(scheduleId, date) {
+      const trip = trips.find(t => t.id === currentTripId);
+      const item = trip && (trip.schedules[date] || []).find(s => s.id === scheduleId);
+      if (!item) return;
+      pickAndUploadPhoto(`item/${currentTripId}/${scheduleId}.jpg`, async (url) => {
+        item.photo = url;
+        try { await saveToServer(); } catch (e) { alert('서버 저장 실패: ' + e.message); }
+        openDetail(scheduleId, date);
+      });
+    }
+
+    async function removeItemPhoto(scheduleId, date) {
+      if (!confirm('이 사진을 삭제하시겠습니까?')) return;
+      const trip = trips.find(t => t.id === currentTripId);
+      const item = trip && (trip.schedules[date] || []).find(s => s.id === scheduleId);
+      if (!item) return;
+      delete item.photo;
+      await removeFromStorage(`item/${currentTripId}/${scheduleId}.jpg`);
+      try { await saveToServer(); } catch (e) { alert('서버 저장 실패: ' + e.message); }
+      openDetail(scheduleId, date);
+    }
+
+    // ----- 여행 대표사진 -----
+    function setCoverPhoto(tripId) {
+      const trip = trips.find(t => t.id === tripId);
+      if (!trip) return;
+      pickAndUploadPhoto(`cover/${tripId}.jpg`, async (url) => {
+        trip.coverPhoto = url;
+        try { await saveToServer(); } catch (e) { alert('서버 저장 실패: ' + e.message); }
+        openTrip(tripId);
+      });
+    }
+
+    async function removeCoverPhoto(tripId) {
+      if (!confirm('대표사진을 삭제하시겠습니까?')) return;
+      const trip = trips.find(t => t.id === tripId);
+      if (!trip) return;
+      delete trip.coverPhoto;
+      await removeFromStorage(`cover/${tripId}.jpg`);
+      try { await saveToServer(); } catch (e) { alert('서버 저장 실패: ' + e.message); }
+      openTrip(tripId);
+    }
+
+    // =============================================
 
     //  🔐 비밀번호 시스템
 
@@ -1297,7 +1424,7 @@
 
             <div class="trip-card-thumb" style="background:${(trip.color || '#667eea')}22;">
 
-              <span class="thumb-emoji">${trip.emoji || '✈️'}</span>
+              ${trip.coverPhoto ? `<img class="trip-card-cover" src="${trip.coverPhoto}" alt="">` : `<span class="thumb-emoji">${trip.emoji || '✈️'}</span>`}
 
               <div class="trip-card-badge ${st.cls}">${st.label}</div>
 
@@ -1371,6 +1498,8 @@
 
       document.getElementById('trip-header').innerHTML = `
 
+        ${trip.coverPhoto ? `<img class="trip-cover" src="${trip.coverPhoto}" alt="대표사진">` : ''}
+
         <div class="trip-header-emoji">${trip.emoji || '✈️'}</div>
 
         <div class="trip-header-info">
@@ -1381,7 +1510,11 @@
 
         </div>
 
-        <div style="display:flex;gap:8px;flex-shrink:0;">
+        <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
+
+          <button class="btn btn-secondary" style="font-size:13px;" onclick="setCoverPhoto(${trip.id})">${trip.coverPhoto ? '🔄 대표사진' : '📷 대표사진'}</button>
+
+          ${trip.coverPhoto ? `<button class="btn btn-danger" style="font-size:13px;" onclick="removeCoverPhoto(${trip.id})">🗑️</button>` : ''}
 
           <button class="btn btn-secondary" style="font-size:13px;" onclick="openEditTripModal(${trip.id})">✏️ 수정</button>
 
@@ -1719,6 +1852,14 @@
 
         ${item.memo ? `<div class="detail-memo"><div class="label">🗒️ 메모</div><textarea readonly>${item.memo}</textarea></div>` : ''}
 
+        <div class="detail-photo-block">
+          ${item.photo ? `<img class="detail-photo" src="${item.photo}" alt="일정 사진">` : `<div class="detail-photo-empty">📷 아직 사진이 없어요</div>`}
+          <div class="detail-photo-actions">
+            <button class="btn btn-secondary" style="font-size:13px;" onclick="setItemPhoto(${item.id}, '${date}')">${item.photo ? '🔄 사진 변경' : '📷 사진 추가'}</button>
+            ${item.photo ? `<button class="btn btn-danger" style="font-size:13px;" onclick="removeItemPhoto(${item.id}, '${date}')">🗑️ 사진 삭제</button>` : ''}
+          </div>
+        </div>
+
       `;
 
       document.getElementById('detail-modal').classList.remove('hidden');
@@ -2044,6 +2185,13 @@
  
 
     async function deleteTrip(tripId) {
+
+      const entered = prompt('이 여행을 삭제하려면 PIN을 입력하세요');
+      if (entered === null) return;
+      if (entered !== getStoredPin()) {
+        alert('❌ PIN이 틀렸습니다. 삭제가 취소되었습니다.');
+        return;
+      }
 
       if (!confirm('이 여행을 삭제하시겠습니까?')) return;
 
