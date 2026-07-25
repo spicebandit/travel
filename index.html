@@ -1602,6 +1602,8 @@
 
           <button class="btn btn-secondary" style="font-size:13px;" onclick="exportTripICS(${trip.id})">📅 내 캘린더에 추가</button>
 
+          ${((trip.title || '') + (trip.destination || '')).includes('속초') ? `<button class="btn btn-secondary" style="font-size:13px;" onclick="window.open('/sokcho-map.html','_blank')">🗺 동선보기</button>` : ''}
+
           <button class="btn btn-secondary" style="font-size:13px;" onclick="openEditTripModal(${trip.id})">✏️ 수정</button>
 
         </div>
