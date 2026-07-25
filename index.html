@@ -252,7 +252,9 @@
 
     .trip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; margin-bottom: 20px; }
 
-    .trip-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); cursor: pointer; transition: all 0.3s; position: relative; }
+    .trip-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); cursor: pointer; transition: all 0.3s; position: relative; border: 2.5px solid transparent; }
+    .trip-card.hl-upcoming { border-color: #ed8936; box-shadow: 0 6px 18px rgba(237,137,54,0.28); }
+    .trip-card.hl-current { border-color: #48bb78; box-shadow: 0 6px 18px rgba(72,187,120,0.30); }
 
     .trip-card:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0,0,0,0.15); }
 
@@ -1420,7 +1422,7 @@
 
         return `
 
-          <div class="trip-card" onclick="openTrip(${trip.id})">
+          <div class="trip-card ${st.cls === 'badge-past' ? '' : (st.cls === 'badge-upcoming' ? 'hl-upcoming' : 'hl-current')}" onclick="openTrip(${trip.id})">
 
             <div class="trip-card-thumb" style="background:${(trip.color || '#667eea')}22;">
 
