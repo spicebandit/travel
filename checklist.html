@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>🧳 속초 여행 준비물 체크리스트 (7/26–29)</title>
+<style>
+  :root{
+    --green:#2f6b46; --green-d:#234f34; --sage:#eef3ee; --line:#d7e0d9;
+    --ink:#1f2a24; --gray:#5b6660; --cream:#faf8f2; --gold:#a9772f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#f4f6f4;color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif}
+  .wrap{max-width:640px;margin:0 auto;padding:16px 14px 60px}
+  header{text-align:center;padding:10px 0 6px}
+  header h1{margin:0;font-size:20px;color:var(--green-d);font-weight:800}
+  header p{margin:4px 0 0;font-size:12.5px;color:var(--gray)}
+  .tabs{position:sticky;top:0;z-index:5;background:#f4f6f4;display:flex;gap:6px;
+    overflow-x:auto;padding:10px 2px;margin:6px 0 4px;-webkit-overflow-scrolling:touch}
+  .tab{flex:0 0 auto;border:1.5px solid var(--line);background:#fff;color:var(--gray);
+    padding:8px 14px;border-radius:20px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .tab.active{background:var(--green);color:#fff;border-color:var(--green)}
+  .panel{display:none}
+  .panel.active{display:block}
+  .progress{display:flex;align-items:center;gap:8px;margin:6px 2px 12px}
+  .bar-bg{flex:1;height:8px;background:#e3e9e3;border-radius:8px;overflow:hidden}
+  .bar-fill{height:100%;width:0;background:var(--green);border-radius:8px;transition:width .25s}
+  .pct{font-size:12px;color:var(--gray);font-weight:700;min-width:58px;text-align:right}
+  .group{margin:0 0 14px}
+  .group h3{margin:0 0 6px;font-size:13px;color:var(--gold);font-weight:800;letter-spacing:.02em}
+  ul{list-style:none;margin:0;padding:0;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  li{border-bottom:1px solid #eef1ee}
+  li:last-child{border-bottom:none}
+  label{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;font-size:15px}
+  label input{width:20px;height:20px;accent-color:var(--green);flex:0 0 auto}
+  label .txt{flex:1}
+  label.done .txt{color:#9aa39d;text-decoration:line-through}
+  .hint{font-size:11.5px;color:var(--gray);margin-left:6px}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 10px}
+  .reset{background:none;border:none;color:var(--gray);font-size:12px;text-decoration:underline;cursor:pointer}
+  footer{text-align:center;font-size:11px;color:#9aa39d;margin-top:20px;line-height:1.6}
+  .note{background:var(--sage);border-left:3px solid var(--green);border-radius:8px;
+    padding:10px 12px;font-size:12px;color:var(--green-d);margin:0 2px 14px;line-height:1.55}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🧳 속초 여행 준비물</h1>
+    <p>2026.7.26(일)–29(수) · 롯데리조트 속초 · 가족 4인</p>
+  </header>
+
+  <div class="note">
+    아래 <b>내 이름 탭</b>을 눌러 각자 준비물을 체크하세요. 체크 상태는 <b>이 폰(브라우저)에 저장</b>됩니다.
+    가족에게 이 링크만 공유하면 각자 자기 것만 챙기면 돼요.
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="toolbar">
+    <div class="progress" style="flex:1">
+      <div class="bar-bg"><div class="bar-fill" id="bar"></div></div>
+      <div class="pct" id="pct">0 / 0</div>
+    </div>
+  </div>
+  <div style="text-align:right;margin:-4px 2px 10px"><button class="reset" id="reset">이 탭 초기화</button></div>
+
+  <div id="panels"></div>
+
+  <footer>
+    체크는 기기별로 저장돼요(공유 링크로 열어도 각자 따로 저장). · 속초 여행 준비물 체크리스트
+  </footer>
+</div>
+
+<script>
+const DATA = {
+  "공통": {
+    emoji:"👨‍👩‍👧‍👦",
+    groups:{
+      "서류·결제":[
+        "리조트 예약확인서(예약번호 26137745)","신분증","현금·체크카드","자동차 충전카드/주유비"
+      ],
+      "물놀이(수영장·바다)":[
+        "비치타월·큰 수건","방수팩/지퍼백","물놀이 가방","돗자리·비치매트","아이스박스(회 포장용)"
+      ],
+      "건강·안전":[
+        "상비약(해열·소화·지사)","밴드·연고·소독","멀미약","선크림(가족 공용)","모기 기피제","마스크·물티슈·휴지"
+      ],
+      "전자·기타":[
+        "멀티탭·충전기 세트","보조배터리","카메라","우산/우비(소나기 대비)","에코백·쓰레기봉투","간식·생수"
+      ]
+    }
+  },
+  "아빠": { emoji:"👨", groups:{ "의류":["상의 3~4","하의 2~3","속옷·양말 4일치","수영복·래시가드","잠옷","가벼운 겉옷(밤 바닷바람)"],
+    "신발·잡화":["운동화(설악산)","샌들·슬리퍼","선글라스·모자"],
+    "개인":["세면도구","면도기","개인약","휴대폰 충전기"] } },
+  "엄마": { emoji:"👩", groups:{ "의류":["상의 3~4","하의 2~3","속옷·양말 4일치","수영복·래시가드","잠옷","가벼운 겉옷"],
+    "신발·잡화":["편한 운동화(설악산)","샌들·슬리퍼","선글라스·모자·양산"],
+    "개인":["기초화장품·스킨케어","세면도구","헤어드라이어/고데기","개인약","충전기"] } },
+  "딸 (고2)": { emoji:"👧", groups:{ "의류":["코디 옷 4일치","속옷·양말","수영복·래시가드","물안경","잠옷"],
+    "뷰티":["화장품·스킨케어","선크림(개인)","고데기/헤어","생리용품"],
+    "개인":["이어폰","셀카봉/카메라","개인 충전기·보조배터리","선글라스·모자","슬리퍼"] } },
+  "아들 (중3)": { emoji:"👦", groups:{ "의류":["상의·하의 4일치","속옷·양말","수영복·래시가드","물안경","잠옷"],
+    "신발·잡화":["운동화(설악산)","슬리퍼","모자"],
+    "개인":["이어폰","게임기·충전기","개인 충전기","멀미약(케이블카·차)","세면도구"] } }
+};
+
+const tabsEl=document.getElementById('tabs');
+const panelsEl=document.getElementById('panels');
+const barEl=document.getElementById('bar');
+const pctEl=document.getElementById('pct');
+const names=Object.keys(DATA);
+let current=localStorage.getItem('sokcho_ck_tab')||names[0];
+if(!names.includes(current)) current=names[0];
+
+function keyFor(name,item){ return 'sokcho_ck::'+name+'::'+item; }
+
+names.forEach(name=>{
+  const t=document.createElement('button');
+  t.className='tab'+(name===current?' active':'');
+  t.textContent=DATA[name].emoji+' '+name;
+  t.onclick=()=>{ current=name; localStorage.setItem('sokcho_ck_tab',name); render(); };
+  tabsEl.appendChild(t);
+
+  const p=document.createElement('div');
+  p.className='panel'+(name===current?' active':'');
+  p.dataset.name=name;
+  const g=DATA[name].groups;
+  Object.keys(g).forEach(gname=>{
+    const grp=document.createElement('div'); grp.className='group';
+    const h=document.createElement('h3'); h.textContent=gname; grp.appendChild(h);
+    const ul=document.createElement('ul');
+    g[gname].forEach(item=>{
+      const li=document.createElement('li');
+      const lab=document.createElement('label');
+      const cb=document.createElement('input'); cb.type='checkbox';
+      const k=keyFor(name,item);
+      cb.checked=localStorage.getItem(k)==='1';
+      if(cb.checked) lab.classList.add('done');
+      cb.onchange=()=>{ localStorage.setItem(k,cb.checked?'1':'0'); lab.classList.toggle('done',cb.checked); updateProgress(); };
+      const sp=document.createElement('span'); sp.className='txt'; sp.textContent=item;
+      lab.appendChild(cb); lab.appendChild(sp); li.appendChild(lab); ul.appendChild(li);
+    });
+    grp.appendChild(ul); p.appendChild(grp);
+  });
+  panelsEl.appendChild(p);
+});
+
+function updateProgress(){
+  const g=DATA[current].groups; let total=0,done=0;
+  Object.values(g).forEach(arr=>arr.forEach(item=>{ total++; if(localStorage.getItem(keyFor(current,item))==='1') done++; }));
+  const pctv=total?Math.round(done/total*100):0;
+  barEl.style.width=pctv+'%';
+  pctEl.textContent=done+' / '+total;
+}
+function render(){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===current));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.dataset.name===current));
+  updateProgress();
+}
+document.getElementById('reset').onclick=()=>{
+  if(!confirm(current+' 탭의 체크를 모두 지울까요?')) return;
+  Object.values(DATA[current].groups).forEach(arr=>arr.forEach(item=>localStorage.removeItem(keyFor(current,item))));
+  render();
+  document.querySelectorAll('.panel.active input').forEach(cb=>{cb.checked=false;cb.closest('label').classList.remove('done');});
+};
+render();
+</script>
+</body>
+</html>

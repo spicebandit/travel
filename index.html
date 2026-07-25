@@ -1604,6 +1604,8 @@
 
           ${((trip.title || '') + (trip.destination || '')).includes('속초') ? `<button class="btn btn-secondary" style="font-size:13px;" onclick="window.open('/sokcho-map.html','_blank')">🗺 동선보기</button>` : ''}
 
+          ${((trip.title || '') + (trip.destination || '')).includes('속초') ? `<button class="btn btn-secondary" style="font-size:13px;" onclick="window.open('/checklist.html','_blank')">🧳 준비물</button>` : ''}
+
           <button class="btn btn-secondary" style="font-size:13px;" onclick="openEditTripModal(${trip.id})">✏️ 수정</button>
 
         </div>
