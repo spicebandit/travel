@@ -3,12 +3,10 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
-<title>🧳 속초 여행 준비물 체크리스트 (7/26–29)</title>
+<title>🧳 여행 준비물 체크리스트</title>
 <style>
-  :root{
-    --green:#2f6b46; --green-d:#234f34; --sage:#eef3ee; --line:#d7e0d9;
-    --ink:#1f2a24; --gray:#5b6660; --cream:#faf8f2; --gold:#a9772f;
-  }
+  :root{--green:#2f6b46;--green-d:#234f34;--sage:#eef3ee;--line:#d7e0d9;
+    --ink:#1f2a24;--gray:#5b6660;--cream:#faf8f2;--gold:#a9772f}
   *{box-sizing:border-box}
   html,body{margin:0;background:#f4f6f4;color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif}
@@ -16,6 +14,8 @@
   header{text-align:center;padding:10px 0 6px}
   header h1{margin:0;font-size:20px;color:var(--green-d);font-weight:800}
   header p{margin:4px 0 0;font-size:12.5px;color:var(--gray)}
+  .sync{font-size:11px;color:#9aa39d;margin-top:4px}
+  .sync.on{color:var(--green)}
   .tabs{position:sticky;top:0;z-index:5;background:#f4f6f4;display:flex;gap:6px;
     overflow-x:auto;padding:10px 2px;margin:6px 0 4px;-webkit-overflow-scrolling:touch}
   .tab{flex:0 0 auto;border:1.5px solid var(--line);background:#fff;color:var(--gray);
@@ -23,149 +23,204 @@
   .tab.active{background:var(--green);color:#fff;border-color:var(--green)}
   .panel{display:none}
   .panel.active{display:block}
-  .progress{display:flex;align-items:center;gap:8px;margin:6px 2px 12px}
+  .progress{display:flex;align-items:center;gap:8px;margin:6px 2px 4px;flex:1}
   .bar-bg{flex:1;height:8px;background:#e3e9e3;border-radius:8px;overflow:hidden}
   .bar-fill{height:100%;width:0;background:var(--green);border-radius:8px;transition:width .25s}
   .pct{font-size:12px;color:var(--gray);font-weight:700;min-width:58px;text-align:right}
   .group{margin:0 0 14px}
-  .group h3{margin:0 0 6px;font-size:13px;color:var(--gold);font-weight:800;letter-spacing:.02em}
+  .group h3{margin:0 0 6px;font-size:13px;color:var(--gold);font-weight:800}
   ul{list-style:none;margin:0;padding:0;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
-  li{border-bottom:1px solid #eef1ee}
-  li:last-child{border-bottom:none}
+  li{border-bottom:1px solid #eef1ee}li:last-child{border-bottom:none}
   label{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;font-size:15px}
   label input{width:20px;height:20px;accent-color:var(--green);flex:0 0 auto}
   label .txt{flex:1}
   label.done .txt{color:#9aa39d;text-decoration:line-through}
-  .hint{font-size:11.5px;color:var(--gray);margin-left:6px}
-  .toolbar{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 10px}
   .reset{background:none;border:none;color:var(--gray);font-size:12px;text-decoration:underline;cursor:pointer}
   footer{text-align:center;font-size:11px;color:#9aa39d;margin-top:20px;line-height:1.6}
   .note{background:var(--sage);border-left:3px solid var(--green);border-radius:8px;
     padding:10px 12px;font-size:12px;color:var(--green-d);margin:0 2px 14px;line-height:1.55}
+  .loading{text-align:center;color:var(--gray);padding:40px 0;font-size:14px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>🧳 속초 여행 준비물</h1>
-    <p>2026.7.26(일)–29(수) · 롯데리조트 속초 · 가족 4인</p>
+    <h1>🧳 여행 준비물</h1>
+    <p id="trip-name">불러오는 중…</p>
+    <div class="sync" id="sync">☁️ 연결 중…</div>
   </header>
 
   <div class="note">
-    아래 <b>내 이름 탭</b>을 눌러 각자 준비물을 체크하세요. 체크 상태는 <b>이 폰(브라우저)에 저장</b>됩니다.
-    가족에게 이 링크만 공유하면 각자 자기 것만 챙기면 돼요.
+    <b>내 이름 탭</b>을 눌러 준비물을 체크하세요. 체크는 <b>온라인 저장</b>되어
+    <b>다른 폰에서 열어도 함께 표시</b>됩니다(가족 공유).
   </div>
 
-  <div class="tabs" id="tabs"></div>
+  <div id="app"><div class="loading">체크리스트를 불러오는 중…</div></div>
 
-  <div class="toolbar">
-    <div class="progress" style="flex:1">
-      <div class="bar-bg"><div class="bar-fill" id="bar"></div></div>
-      <div class="pct" id="pct">0 / 0</div>
-    </div>
-  </div>
-  <div style="text-align:right;margin:-4px 2px 10px"><button class="reset" id="reset">이 탭 초기화</button></div>
-
-  <div id="panels"></div>
-
-  <footer>
-    체크는 기기별로 저장돼요(공유 링크로 열어도 각자 따로 저장). · 속초 여행 준비물 체크리스트
-  </footer>
+  <footer>여행별 · 온라인 동기화 체크리스트</footer>
 </div>
 
 <script>
-const DATA = {
-  "공통": {
-    emoji:"👨‍👩‍👧‍👦",
-    groups:{
-      "서류·결제":[
-        "리조트 예약확인서(예약번호 26137745)","신분증","현금·체크카드","자동차 충전카드/주유비"
-      ],
-      "물놀이(수영장·바다)":[
-        "비치타월·큰 수건","방수팩/지퍼백","물놀이 가방","돗자리·비치매트","아이스박스(회 포장용)"
-      ],
-      "건강·안전":[
-        "상비약(해열·소화·지사)","밴드·연고·소독","멀미약","선크림(가족 공용)","모기 기피제","마스크·물티슈·휴지"
-      ],
-      "전자·기타":[
-        "멀티탭·충전기 세트","보조배터리","카메라","우산/우비(소나기 대비)","에코백·쓰레기봉투","간식·생수"
-      ]
-    }
-  },
-  "아빠": { emoji:"👨", groups:{ "의류":["상의 3~4","하의 2~3","속옷·양말 4일치","수영복·래시가드","잠옷","가벼운 겉옷(밤 바닷바람)"],
-    "신발·잡화":["운동화(설악산)","샌들·슬리퍼","선글라스·모자"],
-    "개인":["세면도구","면도기","개인약","휴대폰 충전기"] } },
-  "엄마": { emoji:"👩", groups:{ "의류":["상의 3~4","하의 2~3","속옷·양말 4일치","수영복·래시가드","잠옷","가벼운 겉옷"],
-    "신발·잡화":["편한 운동화(설악산)","샌들·슬리퍼","선글라스·모자·양산"],
+const SB="https://rtueiiwaulmpazrdzwld.supabase.co";
+const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0dWVpaXdhdWxtcGF6cmR6d2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjI2MTQsImV4cCI6MjA5NjU5ODYxNH0.Ki8sigtxs4OTMJNFEaBA8b2ldRc3nlqxN4Y6FwJUeQw";
+const H={apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json"};
+
+// 준비물 템플릿(가족 공통). 체크 상태는 여행별로 Supabase에 저장됨.
+const TEMPLATE = {
+  "공통": { emoji:"👨‍👩‍👧‍👦", groups:{
+    "서류·결제":["예약확인서","신분증","현금·체크카드","자동차 충전카드/주유비"],
+    "물놀이":["비치타월·큰 수건","방수팩/지퍼백","물놀이 가방","돗자리·비치매트","아이스박스"],
+    "건강·안전":["상비약(해열·소화·지사)","밴드·연고·소독","멀미약","선크림(공용)","모기 기피제","물티슈·휴지"],
+    "전자·기타":["멀티탭·충전기","보조배터리","카메라","우산/우비","에코백·쓰레기봉투","간식·생수"] } },
+  "아빠": { emoji:"👨", groups:{
+    "의류":["상의 3~4","하의 2~3","속옷·양말","수영복·래시가드","잠옷","가벼운 겉옷"],
+    "신발·잡화":["운동화","샌들·슬리퍼","선글라스·모자"],
+    "개인":["세면도구","면도기","개인약","충전기"] } },
+  "엄마": { emoji:"👩", groups:{
+    "의류":["상의 3~4","하의 2~3","속옷·양말","수영복·래시가드","잠옷","가벼운 겉옷"],
+    "신발·잡화":["편한 운동화","샌들·슬리퍼","선글라스·모자·양산"],
     "개인":["기초화장품·스킨케어","세면도구","헤어드라이어/고데기","개인약","충전기"] } },
-  "딸 (고2)": { emoji:"👧", groups:{ "의류":["코디 옷 4일치","속옷·양말","수영복·래시가드","물안경","잠옷"],
+  "딸": { emoji:"👧", groups:{
+    "의류":["코디 옷","속옷·양말","수영복·래시가드","물안경","잠옷"],
     "뷰티":["화장품·스킨케어","선크림(개인)","고데기/헤어","생리용품"],
     "개인":["이어폰","셀카봉/카메라","개인 충전기·보조배터리","선글라스·모자","슬리퍼"] } },
-  "아들 (중3)": { emoji:"👦", groups:{ "의류":["상의·하의 4일치","속옷·양말","수영복·래시가드","물안경","잠옷"],
-    "신발·잡화":["운동화(설악산)","슬리퍼","모자"],
-    "개인":["이어폰","게임기·충전기","개인 충전기","멀미약(케이블카·차)","세면도구"] } }
+  "아들": { emoji:"👦", groups:{
+    "의류":["상의·하의","속옷·양말","수영복·래시가드","물안경","잠옷"],
+    "신발·잡화":["운동화","슬리퍼","모자"],
+    "개인":["이어폰","게임기·충전기","개인 충전기","멀미약","세면도구"] } }
 };
 
-const tabsEl=document.getElementById('tabs');
-const panelsEl=document.getElementById('panels');
-const barEl=document.getElementById('bar');
-const pctEl=document.getElementById('pct');
-const names=Object.keys(DATA);
-let current=localStorage.getItem('sokcho_ck_tab')||names[0];
-if(!names.includes(current)) current=names[0];
+const params=new URLSearchParams(location.search);
+let TRIP_ID=params.get('trip');
+let ARR=null, TRIP=null, current=Object.keys(TEMPLATE)[0];
+let writeChain=Promise.resolve();
+const $=(id)=>document.getElementById(id);
 
-function keyFor(name,item){ return 'sokcho_ck::'+name+'::'+item; }
+function setSync(txt,on){ const e=$('sync'); e.textContent=txt; e.className='sync'+(on?' on':''); }
+function k(tab,item){ return tab+'::'+item; }
 
-names.forEach(name=>{
-  const t=document.createElement('button');
-  t.className='tab'+(name===current?' active':'');
-  t.textContent=DATA[name].emoji+' '+name;
-  t.onclick=()=>{ current=name; localStorage.setItem('sokcho_ck_tab',name); render(); };
-  tabsEl.appendChild(t);
+async function fetchArr(){
+  const r=await fetch(SB+"/rest/v1/trips?id=eq.family&select=data",{headers:H});
+  const j=await r.json(); const d=j[0].data;
+  return Array.isArray(d)?d:(d.trips||[]);
+}
+async function saveArr(arr){
+  const r=await fetch(SB+"/rest/v1/trips?id=eq.family",{method:"PATCH",headers:{...H,Prefer:"return=minimal"},body:JSON.stringify({data:arr})});
+  if(!r.ok) throw new Error('save '+r.status);
+}
+function findTrip(arr){ return arr.find(t=>String(t.id)===String(TRIP_ID)) || arr[0]; }
 
-  const p=document.createElement('div');
-  p.className='panel'+(name===current?' active':'');
-  p.dataset.name=name;
-  const g=DATA[name].groups;
-  Object.keys(g).forEach(gname=>{
-    const grp=document.createElement('div'); grp.className='group';
-    const h=document.createElement('h3'); h.textContent=gname; grp.appendChild(h);
-    const ul=document.createElement('ul');
-    g[gname].forEach(item=>{
-      const li=document.createElement('li');
-      const lab=document.createElement('label');
-      const cb=document.createElement('input'); cb.type='checkbox';
-      const k=keyFor(name,item);
-      cb.checked=localStorage.getItem(k)==='1';
-      if(cb.checked) lab.classList.add('done');
-      cb.onchange=()=>{ localStorage.setItem(k,cb.checked?'1':'0'); lab.classList.toggle('done',cb.checked); updateProgress(); };
-      const sp=document.createElement('span'); sp.className='txt'; sp.textContent=item;
-      lab.appendChild(cb); lab.appendChild(sp); li.appendChild(lab); ul.appendChild(li);
-    });
-    grp.appendChild(ul); p.appendChild(grp);
+async function init(){
+  try{
+    ARR=await fetchArr();
+    if(!TRIP_ID && ARR[0]) TRIP_ID=String(ARR[0].id);
+    TRIP=findTrip(ARR);
+    if(!TRIP){ $('app').innerHTML='<div class="loading">여행을 찾을 수 없습니다.</div>'; return; }
+    $('trip-name').textContent=(TRIP.emoji?TRIP.emoji+' ':'')+(TRIP.title||'여행')+' · 준비물';
+    buildUI();
+    applyState();
+    setSync('☁️ 동기화됨',true);
+  }catch(e){ setSync('⚠️ 연결 실패 — 새로고침 해주세요',false); $('app').innerHTML='<div class="loading">불러오기 실패. 새로고침 해주세요.</div>'; }
+}
+
+function buildUI(){
+  const app=$('app'); app.innerHTML='';
+  const tabs=document.createElement('div'); tabs.className='tabs';
+  const names=Object.keys(TEMPLATE);
+  names.forEach(name=>{
+    const t=document.createElement('button');
+    t.className='tab'+(name===current?' active':'');
+    t.textContent=TEMPLATE[name].emoji+' '+name;
+    t.onclick=()=>{ current=name; render(); };
+    tabs.appendChild(t);
   });
-  panelsEl.appendChild(p);
-});
+  app.appendChild(tabs);
 
+  const prog=document.createElement('div'); prog.style.display='flex'; prog.style.alignItems='center';
+  prog.innerHTML='<div class="progress"><div class="bar-bg"><div class="bar-fill" id="bar"></div></div><div class="pct" id="pct">0 / 0</div></div>';
+  app.appendChild(prog);
+  const rs=document.createElement('div'); rs.style.cssText='text-align:right;margin:0 2px 10px';
+  rs.innerHTML='<button class="reset" id="reset">이 탭 초기화</button>'; app.appendChild(rs);
+
+  names.forEach(name=>{
+    const p=document.createElement('div'); p.className='panel'+(name===current?' active':''); p.dataset.name=name;
+    const g=TEMPLATE[name].groups;
+    Object.keys(g).forEach(gn=>{
+      const grp=document.createElement('div'); grp.className='group';
+      grp.innerHTML='<h3></h3>'; grp.querySelector('h3').textContent=gn;
+      const ul=document.createElement('ul');
+      g[gn].forEach(item=>{
+        const li=document.createElement('li'); const lab=document.createElement('label');
+        const cb=document.createElement('input'); cb.type='checkbox'; cb.dataset.key=k(name,item);
+        cb.onchange=()=>{ lab.classList.toggle('done',cb.checked); persist(k(name,item),cb.checked); if(name===current) updateProgress(); };
+        const sp=document.createElement('span'); sp.className='txt'; sp.textContent=item;
+        lab.appendChild(cb); lab.appendChild(sp); li.appendChild(lab); ul.appendChild(li);
+      });
+      grp.appendChild(ul); p.appendChild(grp);
+    });
+    app.appendChild(p);
+  });
+  $('reset').onclick=resetTab;
+}
+
+function stateObj(){ return (TRIP&&TRIP.checklist)?TRIP.checklist:{}; }
+function applyState(){
+  const st=stateObj();
+  document.querySelectorAll('#app input[type=checkbox]').forEach(cb=>{
+    const on=!!st[cb.dataset.key]; cb.checked=on; cb.closest('label').classList.toggle('done',on);
+  });
+  updateProgress();
+}
 function updateProgress(){
-  const g=DATA[current].groups; let total=0,done=0;
-  Object.values(g).forEach(arr=>arr.forEach(item=>{ total++; if(localStorage.getItem(keyFor(current,item))==='1') done++; }));
-  const pctv=total?Math.round(done/total*100):0;
-  barEl.style.width=pctv+'%';
-  pctEl.textContent=done+' / '+total;
+  const g=TEMPLATE[current].groups; const st=stateObj(); let total=0,done=0;
+  Object.values(g).forEach(a=>a.forEach(it=>{ total++; if(st[k(current,it)]) done++; }));
+  const bar=$('bar'), pct=$('pct'); if(!bar) return;
+  bar.style.width=(total?Math.round(done/total*100):0)+'%'; pct.textContent=done+' / '+total;
 }
 function render(){
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===current));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.textContent.slice(t.textContent.indexOf(' ')+1)===current));
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.dataset.name===current));
   updateProgress();
 }
-document.getElementById('reset').onclick=()=>{
-  if(!confirm(current+' 탭의 체크를 모두 지울까요?')) return;
-  Object.values(DATA[current].groups).forEach(arr=>arr.forEach(item=>localStorage.removeItem(keyFor(current,item))));
-  render();
-  document.querySelectorAll('.panel.active input').forEach(cb=>{cb.checked=false;cb.closest('label').classList.remove('done');});
-};
-render();
+
+function persist(key,val){
+  // 로컬 즉시 반영
+  TRIP.checklist=TRIP.checklist||{};
+  if(val) TRIP.checklist[key]=true; else delete TRIP.checklist[key];
+  setSync('☁️ 저장 중…',false);
+  writeChain=writeChain.then(async()=>{
+    const arr=await fetchArr();               // 최신 상태 읽어(다른 폰 변경 보존)
+    const trip=findTrip(arr); trip.checklist=trip.checklist||{};
+    if(val) trip.checklist[key]=true; else delete trip.checklist[key];
+    await saveArr(arr);
+    ARR=arr; TRIP=trip;
+    setSync('☁️ 저장됨',true);
+  }).catch(()=>setSync('⚠️ 저장 실패',false));
+}
+
+function resetTab(){
+  if(!confirm(current+' 탭 체크를 모두 지울까요?')) return;
+  const items=[]; Object.values(TEMPLATE[current].groups).forEach(a=>a.forEach(it=>items.push(k(current,it))));
+  TRIP.checklist=TRIP.checklist||{}; items.forEach(key=>delete TRIP.checklist[key]);
+  applyState();
+  setSync('☁️ 저장 중…',false);
+  writeChain=writeChain.then(async()=>{
+    const arr=await fetchArr(); const trip=findTrip(arr); trip.checklist=trip.checklist||{};
+    items.forEach(key=>delete trip.checklist[key]);
+    await saveArr(arr); ARR=arr; TRIP=trip; setSync('☁️ 저장됨',true);
+  }).catch(()=>setSync('⚠️ 저장 실패',false));
+}
+
+async function refresh(){
+  try{
+    const arr=await fetchArr(); const trip=findTrip(arr);
+    if(trip){ ARR=arr; TRIP=trip; applyState(); setSync('☁️ 동기화됨',true); }
+  }catch(e){}
+}
+setInterval(refresh, 12000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) refresh(); });
+
+init();
 </script>
 </body>
 </html>
