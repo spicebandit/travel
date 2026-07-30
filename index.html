@@ -1410,7 +1410,7 @@
 
       const grid = document.getElementById('trip-grid');
 
-      grid.innerHTML = trips.map(trip => {
+      grid.innerHTML = [...trips].sort((a, b) => String(b.startDate || '').localeCompare(String(a.startDate || ''))).map(trip => {
 
         const st = getTripStatus(trip);
 
